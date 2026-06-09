@@ -4,15 +4,16 @@ import { connectDB } from '@/lib/mongodb'
 import { PushSubscriptionModel } from '@/lib/models'
 import webpush from 'web-push'
 
-webpush.setVapidDetails(
-  process.env.VAPID_MAILTO!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-)
-
 export async function POST(request: NextRequest) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // Set VAPID details inside the handler — env vars are only available at runtime, not build time
+  webpush.setVapidDetails(
+    process.env.VAPID_MAILTO!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  )
 
   const { title, body, url } = await request.json()
 
@@ -26,10 +27,9 @@ export async function POST(request: NextRequest) {
       webpush.sendNotification(
         { endpoint: sub.endpoint, keys: sub.keys },
         payload
-      ).catch(async (err) => {
-        // Remove expired/invalid subscriptions (410 Gone)
+      ).catch(async (err: { statusCode?: number }) => {
         if (err.statusCode === 410) {
-          await PushSubscriptionModel.deleteOne({ _id: sub._id })
+          await PushSubscriptionModel.deleteOne({ _id: (sub as { _id: unknown })._id })
         }
         throw err
       })
