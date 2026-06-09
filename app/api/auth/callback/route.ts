@@ -14,7 +14,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Exchange code for tokens
+    // Exchange code for tokens — use the actual request URL as redirect_uri
+    // so it works on localhost AND production without needing env changes
+    const redirectUri = new URL('/api/auth/callback', request.url).toString()
+
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -22,7 +25,7 @@ export async function GET(request: NextRequest) {
         code,
         client_id: process.env.GOOGLE_CLIENT_ID!,
         client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-        redirect_uri: process.env.GOOGLE_REDIRECT_URI!,
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       }),
     })
