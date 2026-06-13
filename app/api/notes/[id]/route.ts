@@ -27,7 +27,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const note = await Note.findOneAndUpdate(
     { _id: id, ownerUserId: session.userId },
     {
-      $set: { ...safeBody, updatedAt: new Date() },
+      $set: { ...safeBody, content: safeBody.content ?? '', updatedAt: new Date() },
       $setOnInsert: { _id: id, ownerUserId: session.userId, createdAt: new Date() },
     },
     { returnDocument: 'after', upsert: true }

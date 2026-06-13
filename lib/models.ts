@@ -44,6 +44,7 @@ const NoteSchema = new Schema({
   notebookId: { type: String, required: true, index: true },
   folderId: { type: String, default: null },
   title: { type: String, default: '' },
+  content: { type: String, default: '' },
   contentCiphertext: { type: String, default: '' },
   contentIv: { type: String, default: '' },
   wordCount: { type: Number, default: 0 },
