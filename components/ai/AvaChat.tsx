@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Sparkles, Send, X, Copy, Check, Trash2,
   ChevronDown, FileText, Square, RefreshCw, User,
+  Lightbulb, PenLine, ClipboardList, BookOpen, Zap, MessageSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import ReactMarkdown from 'react-markdown'
@@ -19,15 +20,15 @@ interface Props {
   onClose?: () => void
   noteContext?: string
   noteTitle?: string
-  fullPage?: boolean   // when used as a standalone /chat page
+  fullPage?: boolean
 }
 
 const SUGGESTIONS = [
-  'Help me brainstorm ideas for my next project',
-  'Write a professional email declining a meeting',
-  'Summarize the key points from my notes',
-  'Create a weekly plan template',
-  'Explain machine learning in simple terms',
+  { icon: Lightbulb,     text: 'Help me brainstorm project ideas' },
+  { icon: PenLine,       text: 'Write a professional email draft' },
+  { icon: ClipboardList, text: 'Create a weekly plan template' },
+  { icon: BookOpen,      text: 'Summarize key points from my notes' },
+  { icon: Zap,           text: 'Explain machine learning simply' },
 ]
 
 let _c = 0
@@ -44,7 +45,6 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
-  // scroll to bottom when messages update
   useEffect(() => {
     if (atBottom) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, atBottom])
@@ -137,86 +137,137 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage }: Props) {
     e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px'
   }
 
+  const hasMessages = messages.length > 0
+
   return (
-    <div className={cn('flex flex-col bg-background', fullPage ? 'h-screen' : 'h-full')}>
+    <div className={cn(
+      'flex flex-col bg-background',
+      // dvh accounts for mobile browser chrome (address bar, home indicator)
+      fullPage ? 'h-[100dvh]' : 'h-full'
+    )}>
 
-      {/* ── Top bar (only in panel mode) ── */}
-      {!fullPage && (
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center shadow-sm">
-            <Sparkles className="w-4 h-4 text-white" />
+      {/* ── Top bar ── */}
+      <div className={cn(
+        'flex items-center gap-3 px-4 border-b border-border/60 shrink-0 bg-background/95 backdrop-blur-sm',
+        fullPage ? 'py-4 safe-area-top' : 'py-3'
+      )}>
+        {/* Avatar with online dot */}
+        <div className="relative shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-md shadow-violet-500/25">
+            <Sparkles className="w-4.5 h-4.5 text-white" />
           </div>
-          <div className="flex-1">
-            <p className="font-semibold text-sm">Ava</p>
-            <p className="text-[11px] text-muted-foreground">AI Assistant</p>
-          </div>
-          <div className="flex gap-1">
-            {messages.length > 0 && (
-              <button onClick={() => { if (streaming) stop(); setMessages([]) }}
-                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-accent text-muted-foreground transition-colors" title="Clear">
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-            {onClose && (
-              <button onClick={onClose}
-                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-accent text-muted-foreground transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
         </div>
-      )}
 
-      {/* Note context */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-semibold text-sm leading-none">Ava</p>
+            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Online
+            </span>
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-0.5 leading-none">
+            AI Assistant · Gemini 2.5 Flash
+          </p>
+        </div>
+
+        <div className="flex gap-0.5 shrink-0">
+          {hasMessages && (
+            <button
+              onClick={() => { if (streaming) stop(); setMessages([]) }}
+              className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-accent active:bg-accent/70 text-muted-foreground transition-all duration-150 active:scale-[0.97] touch-manipulation"
+              title="Clear chat"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-accent active:bg-accent/70 text-muted-foreground transition-all duration-150 active:scale-[0.97] touch-manipulation"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Note context banner */}
       {noteContext && (
-        <div className="flex items-center gap-2 px-4 py-1.5 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200/50 dark:border-amber-800/30 shrink-0">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200/60 dark:border-amber-800/30 shrink-0">
           <FileText className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
           <p className="text-xs text-amber-700 dark:text-amber-300 truncate">
-            Using note as context: <strong>{noteTitle || 'Untitled'}</strong>
+            Context: <span className="font-medium">{noteTitle || 'Untitled'}</span>
           </p>
         </div>
       )}
 
       {/* ── Messages area ── */}
-      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
-
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto relative [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {/* Empty / welcome state */}
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center min-h-full px-4 py-12 text-center">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center mx-auto mb-5 shadow-lg">
-              <Sparkles className="w-9 h-9 text-white" />
+        {!hasMessages && (
+          <div className="flex flex-col items-center justify-center min-h-full px-5 py-12 text-center">
+            {/* Glowing avatar */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 rounded-full bg-violet-500/20 blur-2xl scale-150" />
+              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-xl shadow-violet-500/25">
+                <Sparkles className="w-9 h-9 text-white" />
+              </div>
             </div>
-            <h2 className="text-2xl font-bold mb-1">Hi, I'm Ava</h2>
-            <p className="text-muted-foreground text-sm mb-8 max-w-sm">
+            <h2 className="text-2xl font-bold mb-2 tracking-tight">Hi, I&apos;m Ava</h2>
+            <p className="text-muted-foreground text-sm mb-8 max-w-xs leading-relaxed">
               Your AI assistant. Ask me anything — I can write, plan, explain, and more.
             </p>
 
-            <div className="w-full max-w-lg space-y-2">
-              {SUGGESTIONS.map(s => (
-                <button key={s} onClick={() => send(s)}
-                  className="w-full text-left px-4 py-3 rounded-2xl border border-border bg-card hover:bg-accent hover:border-primary/30 transition-all text-sm active:scale-[0.98]">
-                  {s}
-                </button>
-              ))}
+            {/* Suggestion chips — icon + text, vertical on desktop, horizontal scroll on mobile */}
+            <div className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-5 px-5">
+              <div className="flex gap-2 pb-1 w-max sm:w-auto sm:flex-col sm:max-w-sm sm:mx-auto">
+                {SUGGESTIONS.map(({ icon: Icon, text }) => (
+                  <button
+                    key={text}
+                    onClick={() => send(text)}
+                    className={cn(
+                      'shrink-0 sm:shrink text-left flex items-center gap-3',
+                      'px-4 py-3 rounded-2xl border border-border/70',
+                      'bg-background hover:bg-accent active:bg-accent/80',
+                      'transition-all duration-150 active:scale-[0.98]',
+                      'min-h-[52px] touch-manipulation',
+                      'whitespace-nowrap sm:whitespace-normal'
+                    )}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center shrink-0">
+                      <Icon className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                    </div>
+                    <span className="text-sm text-foreground leading-snug">{text}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Messages — ChatGPT style: full-width, no bubbles */}
-        {messages.length > 0 && (
-          <div className="max-w-3xl mx-auto px-4 py-6 space-y-8">
+        {/* Messages */}
+        {hasMessages && (
+          <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
             {messages.map((msg, idx) => {
               const isUser = msg.role === 'user'
               const isLast = idx === messages.length - 1
               return (
-                <div key={msg.id} className={cn('flex gap-4', isUser && 'flex-row-reverse gap-3')}>
-
+                <div key={msg.id} className={cn(
+                  'flex gap-3 items-end',
+                  isUser ? 'flex-row-reverse' : 'flex-row'
+                )}>
                   {/* Avatar */}
                   <div className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 shadow-sm',
+                    'w-8 h-8 rounded-full flex items-center justify-center shrink-0 mb-0.5',
                     isUser
-                      ? 'bg-muted border border-border'
-                      : 'bg-gradient-to-br from-violet-500 to-blue-500'
+                      ? 'bg-muted border border-border/60'
+                      : 'bg-gradient-to-br from-violet-600 to-blue-600 shadow-sm shadow-violet-500/20'
                   )}>
                     {isUser
                       ? <User className="w-4 h-4 text-muted-foreground" />
@@ -225,58 +276,73 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage }: Props) {
                   </div>
 
                   {/* Content */}
-                  <div className={cn('flex-1 min-w-0 space-y-2', isUser && 'flex flex-col items-end')}>
-                    {/* Name */}
-                    <p className="text-xs font-semibold text-muted-foreground px-1">
-                      {isUser ? 'You' : 'Ava'}
-                    </p>
+                  <div className={cn('flex-1 min-w-0', isUser && 'flex flex-col items-end')}>
+                    {isUser ? (
+                      <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-3 inline-block max-w-[85%] text-sm leading-relaxed whitespace-pre-wrap text-left shadow-sm">
+                        {msg.content}
+                      </div>
+                    ) : (
+                      <div className="w-full">
+                        {/* Typing indicator */}
+                        {msg.streaming && !msg.content ? (
+                          <div className="inline-flex items-center gap-1.5 px-4 py-3.5 rounded-2xl rounded-bl-sm bg-muted/60 border border-border/40">
+                            <span className="text-xs text-muted-foreground mr-1">Ava is thinking</span>
+                            {[0, 150, 300].map(d => (
+                              <span
+                                key={d}
+                                className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"
+                                style={{ animationDelay: `${d}ms` }}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm leading-7">
+                            <div className="prose prose-sm dark:prose-invert max-w-none
+                              prose-p:leading-7 prose-p:my-2 first:prose-p:mt-0
+                              prose-li:my-0.5 prose-li:leading-6
+                              prose-headings:font-semibold prose-headings:my-3
+                              prose-pre:bg-zinc-950 prose-pre:rounded-xl prose-pre:text-xs prose-pre:border prose-pre:border-border
+                              prose-code:bg-muted prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.8em] prose-code:font-mono
+                              prose-blockquote:border-l-violet-400 prose-blockquote:text-muted-foreground prose-blockquote:not-italic
+                              prose-strong:font-semibold prose-strong:text-foreground
+                              prose-a:text-violet-600 dark:prose-a:text-violet-400 prose-a:no-underline hover:prose-a:underline">
+                              <ReactMarkdown>{msg.content || (msg.streaming ? '\u200b' : '')}</ReactMarkdown>
+                            </div>
+                            {msg.streaming && msg.content && (
+                              <span className="inline-flex gap-1 items-end mt-1 ml-0.5">
+                                {[0, 150, 300].map(d => (
+                                  <span
+                                    key={d}
+                                    className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce"
+                                    style={{ animationDelay: `${d}ms` }}
+                                  />
+                                ))}
+                              </span>
+                            )}
+                          </div>
+                        )}
 
-                    {/* Message body */}
-                    <div className={cn(
-                      'text-sm leading-7',
-                      isUser
-                        ? 'bg-muted rounded-2xl rounded-tr-sm px-4 py-3 inline-block max-w-[85%] whitespace-pre-wrap text-left'
-                        : 'w-full'
-                    )}>
-                      {isUser ? (
-                        <span>{msg.content}</span>
-                      ) : (
-                        <div className="prose prose-sm dark:prose-invert max-w-none
-                          prose-p:leading-7 prose-p:my-2
-                          prose-li:my-0.5 prose-li:leading-6
-                          prose-headings:font-semibold prose-headings:my-3
-                          prose-pre:bg-zinc-900 prose-pre:rounded-xl prose-pre:text-xs
-                          prose-code:bg-muted prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.8em]
-                          prose-blockquote:border-l-primary prose-blockquote:text-muted-foreground
-                          prose-strong:font-semibold prose-strong:text-foreground">
-                          <ReactMarkdown>{msg.content || (msg.streaming ? '\u200b' : '')}</ReactMarkdown>
-                          {msg.streaming && (
-                            <span className="inline-flex gap-1 items-end ml-1 mb-1">
-                              {[0, 150, 300].map(d => (
-                                <span key={d} className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-bounce"
-                                  style={{ animationDelay: `${d}ms` }} />
-                              ))}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action row for assistant */}
-                    {!isUser && !msg.streaming && msg.content && (
-                      <div className="flex items-center gap-1 px-1 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity">
-                        <button onClick={() => copy(msg.id, msg.content)}
-                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg hover:bg-accent transition-colors">
-                          {copiedId === msg.id
-                            ? <><Check className="w-3.5 h-3.5 text-green-500" />Copied</>
-                            : <><Copy className="w-3.5 h-3.5" />Copy</>
-                          }
-                        </button>
-                        {isLast && !streaming && (
-                          <button onClick={regenerate}
-                            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded-lg hover:bg-accent transition-colors">
-                            <RefreshCw className="w-3.5 h-3.5" />Regenerate
-                          </button>
+                        {/* Action row */}
+                        {!msg.streaming && msg.content && (
+                          <div className="flex items-center gap-0.5 mt-2">
+                            <button
+                              onClick={() => copy(msg.id, msg.content)}
+                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground active:text-foreground px-3 py-2 rounded-xl hover:bg-accent active:bg-accent/80 transition-all duration-150 active:scale-[0.97] min-h-[40px] touch-manipulation"
+                            >
+                              {copiedId === msg.id
+                                ? <><Check className="w-3.5 h-3.5 text-emerald-500" />Copied</>
+                                : <><Copy className="w-3.5 h-3.5" />Copy</>
+                              }
+                            </button>
+                            {isLast && !streaming && (
+                              <button
+                                onClick={regenerate}
+                                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground active:text-foreground px-3 py-2 rounded-xl hover:bg-accent active:bg-accent/80 transition-all duration-150 active:scale-[0.97] min-h-[40px] touch-manipulation"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" />Regenerate
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
@@ -284,28 +350,32 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage }: Props) {
                 </div>
               )
             })}
+            <div ref={bottomRef} className="h-1" />
           </div>
         )}
-
-        <div ref={bottomRef} className="h-4" />
       </div>
 
-      {/* Scroll to bottom */}
+      {/* Scroll-to-bottom button */}
       {!atBottom && (
-        <button
-          onClick={() => { setAtBottom(true); bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }}
-          className="absolute right-6 bottom-28 w-9 h-9 rounded-full bg-background border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:bg-accent transition-all z-10">
-          <ChevronDown className="w-4 h-4" />
-        </button>
+        <div className="absolute right-4 bottom-28 z-10">
+          <button
+            onClick={() => { setAtBottom(true); bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }}
+            className="w-10 h-10 rounded-full bg-background border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:bg-accent active:bg-accent/80 transition-all duration-150 active:scale-[0.97] touch-manipulation"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
       )}
 
-      {/* ── Input bar — ChatGPT style ── */}
-      <div className="shrink-0 px-4 pb-4 pt-3 border-t border-border bg-background">
-        <div className="max-w-3xl mx-auto">
+      {/* ── Input area ── */}
+      <div className="shrink-0 border-t border-border/60 bg-background/98 backdrop-blur-md"
+        style={{ paddingBottom: 'max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))' }}>
+        <div className="px-4 pt-3 pb-1 max-w-3xl mx-auto">
           <div className={cn(
-            'relative flex items-end gap-3 rounded-2xl border bg-background transition-all shadow-sm',
-            'border-border focus-within:border-primary focus-within:shadow-md',
-            'px-4 py-3'
+            'flex items-end gap-2 rounded-3xl border bg-background transition-all duration-200',
+            'border-border/80 focus-within:border-violet-400/70 dark:focus-within:border-violet-500/60',
+            'focus-within:ring-2 focus-within:ring-violet-500/10',
+            'px-4 py-3 shadow-sm focus-within:shadow-lg'
           )}>
             <textarea
               ref={textareaRef}
@@ -315,25 +385,31 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage }: Props) {
               placeholder="Message Ava…"
               rows={1}
               disabled={streaming}
-              className="flex-1 bg-transparent text-sm outline-none resize-none leading-relaxed max-h-48 disabled:opacity-40 placeholder:text-muted-foreground"
+              className="flex-1 bg-transparent text-sm outline-none resize-none leading-relaxed max-h-36 disabled:opacity-40 placeholder:text-muted-foreground/50 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             />
 
             {streaming ? (
-              <button onClick={stop} title="Stop generating"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background text-xs font-medium hover:bg-foreground/80 active:scale-95 transition-all shrink-0">
+              <button
+                onClick={stop}
+                title="Stop generating"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-foreground text-background text-xs font-medium hover:bg-foreground/80 active:scale-[0.97] transition-all duration-150 shrink-0 min-h-[40px] touch-manipulation"
+              >
                 <Square className="w-3 h-3 fill-background" />
                 Stop
               </button>
             ) : (
-              <button onClick={() => send(input)} disabled={!input.trim()}
-                className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 disabled:opacity-20 hover:bg-primary/90 active:scale-95 transition-all shadow-sm">
+              <button
+                onClick={() => send(input)}
+                disabled={!input.trim()}
+                className="w-9 h-9 rounded-2xl bg-violet-600 text-white flex items-center justify-center shrink-0 disabled:opacity-25 hover:bg-violet-700 active:scale-[0.95] transition-all duration-150 shadow-sm touch-manipulation"
+              >
                 <Send className="w-4 h-4" />
               </button>
             )}
           </div>
 
-          <p className="text-center text-[11px] text-muted-foreground/60 mt-2">
-            Ava can make mistakes. Powered by Gemini 2.5 Flash · Free
+          <p className="text-center text-[11px] text-muted-foreground/40 mt-2 pb-1">
+            Ava can make mistakes · Free
           </p>
         </div>
       </div>
