@@ -9,6 +9,22 @@ import {
 import { cn } from '@/lib/utils'
 import ReactMarkdown from 'react-markdown'
 
+// Typing indicator — three bouncing dots inside a message bubble
+function TypingIndicator() {
+  return (
+    <div className="inline-flex items-center gap-1.5 px-4 py-3.5 rounded-2xl rounded-bl-sm bg-muted/70 border border-border/40 shadow-sm">
+      <span className="text-xs text-muted-foreground mr-1.5 font-medium">Ava is thinking</span>
+      {[0, 150, 300].map(d => (
+        <span
+          key={d}
+          className="w-2 h-2 rounded-full bg-muted-foreground/60 animate-bounce"
+          style={{ animationDelay: `${d}ms`, animationDuration: '0.9s' }}
+        />
+      ))}
+    </div>
+  )
+}
+
 interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -206,39 +222,64 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
   return (
     <div className={cn('flex flex-col bg-background', fullPage ? 'h-[100dvh]' : 'h-full')}>
 
-      {/* Header */}
-      <div className={cn('flex items-center gap-3 px-4 border-b border-border/60 shrink-0 bg-background/95 backdrop-blur-sm', fullPage ? 'py-4' : 'py-3')}>
+      {/* Header — iOS-style premium chat header */}
+      <div className={cn(
+        'flex items-center gap-3 px-3 border-b border-border/50 shrink-0',
+        'bg-background/95 backdrop-blur-xl',
+        'safe-area-top',
+        fullPage ? 'py-3' : 'py-2.5'
+      )}>
+        {/* Gradient avatar with online dot */}
         <div className="relative shrink-0">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-md shadow-violet-500/25">
-            <Sparkles className="w-4 h-4 text-white" />
+          <div className={cn(
+            'rounded-full flex items-center justify-center shadow-lg',
+            'bg-gradient-to-br from-violet-500 via-purple-500 to-blue-500',
+            fullPage ? 'w-11 h-11' : 'w-10 h-10'
+          )}>
+            <Sparkles className={cn('text-white', fullPage ? 'w-5 h-5' : 'w-4 h-4')} />
           </div>
-          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+          {/* Online dot */}
+          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background shadow-sm" />
         </div>
+
+        {/* Name + model label */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-sm leading-none">Ava</p>
-            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Online
+            <p className="font-semibold text-[15px] leading-none">Ava</p>
+            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded-full border border-emerald-200/50 dark:border-emerald-800/50">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Online
             </span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5 leading-none">AI Assistant · Gemini 2.5 Flash</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5 leading-none">Gemini 2.5 Flash</p>
         </div>
-        <div className="flex gap-0.5 shrink-0">
+
+        {/* Action buttons — 44px min touch targets */}
+        <div className="flex items-center gap-0.5 shrink-0">
           {hasMessages && (
-            <button onClick={summarizeChat} disabled={summarizing}
-              className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-accent text-muted-foreground transition-all touch-manipulation"
-              title="Summarize this conversation">
+            <button
+              onClick={summarizeChat}
+              disabled={summarizing}
+              title="Summarize conversation"
+              className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-accent active:bg-accent/80 text-muted-foreground hover:text-foreground transition-all duration-150 touch-manipulation active:scale-[0.95]"
+            >
               {summarizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <AlignJustify className="w-4 h-4" />}
             </button>
           )}
           {hasMessages && (
-            <button onClick={() => { if (streaming) stop(); setMessages([]); setSummary(null) }}
-              className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-accent text-muted-foreground transition-all touch-manipulation" title="Clear chat">
+            <button
+              onClick={() => { if (streaming) stop(); setMessages([]); setSummary(null) }}
+              title="Clear chat"
+              className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-accent active:bg-accent/80 text-muted-foreground hover:text-foreground transition-all duration-150 touch-manipulation active:scale-[0.95]"
+            >
               <Trash2 className="w-4 h-4" />
             </button>
           )}
           {onClose && (
-            <button onClick={onClose} className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-accent text-muted-foreground transition-all touch-manipulation">
+            <button
+              onClick={onClose}
+              className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-accent active:bg-accent/80 text-muted-foreground hover:text-foreground transition-all duration-150 touch-manipulation active:scale-[0.95]"
+            >
               <X className="w-4 h-4" />
             </button>
           )}
@@ -253,19 +294,21 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
             Editing: <span className="font-medium">{noteTitle || 'Untitled'}</span>
           </p>
           {hasNoteEdit && (
-            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium shrink-0">AI can edit</span>
+            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold shrink-0 bg-amber-100 dark:bg-amber-900/40 px-2 py-0.5 rounded-full">AI can edit</span>
           )}
         </div>
       )}
 
       {/* Summary banner */}
       {summary && (
-        <div className="mx-4 mt-3 p-3 rounded-2xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200/60 dark:border-violet-800/30 shrink-0">
+        <div className="mx-3 mt-3 p-4 rounded-2xl bg-violet-50 dark:bg-violet-950/30 border border-violet-200/60 dark:border-violet-800/30 shrink-0 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <p className="text-xs font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-1.5">
               <AlignJustify className="w-3.5 h-3.5" /> Chat Summary
             </p>
-            <button onClick={() => setSummary(null)} className="text-violet-400 hover:text-violet-600 transition-colors"><X className="w-3.5 h-3.5" /></button>
+            <button onClick={() => setSummary(null)} className="w-6 h-6 rounded-lg flex items-center justify-center text-violet-400 hover:text-violet-600 hover:bg-violet-100 dark:hover:bg-violet-900/40 transition-colors touch-manipulation">
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
           <p className="text-xs text-violet-700 dark:text-violet-300 leading-relaxed whitespace-pre-wrap">{summary}</p>
         </div>
@@ -273,49 +316,64 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
 
       {/* Note edit quick actions */}
       {hasNoteEdit && hasMessages && !streaming && (
-        <div className="flex gap-2 px-4 py-2 border-b border-border/40 bg-muted/30 overflow-x-auto [scrollbar-width:none] shrink-0">
-          <p className="text-[11px] text-muted-foreground self-center shrink-0 mr-1">Edit note:</p>
+        <div className="flex gap-2 px-4 py-2 border-b border-border/40 bg-muted/20 overflow-x-auto shrink-0">
+          <p className="text-[11px] text-muted-foreground self-center shrink-0 mr-1 font-medium">Edit note:</p>
           {[
-            { icon: FileEdit,  label: 'Replace',  mode: 'replace' as const,  cmd: 'Rewrite the note with improvements' },
-            { icon: FilePlus,  label: 'Append',   mode: 'append'  as const,  cmd: 'Append a continuation to the note' },
-            { icon: FilePen,   label: 'Insert',   mode: 'insert'  as const,  cmd: 'Insert key points into the note' },
+            { icon: FileEdit, label: 'Replace', mode: 'replace' as const, cmd: 'Rewrite the note with improvements' },
+            { icon: FilePlus, label: 'Append',  mode: 'append'  as const, cmd: 'Append a continuation to the note' },
+            { icon: FilePen,  label: 'Insert',  mode: 'insert'  as const, cmd: 'Insert key points into the note' },
           ].map(({ icon: Icon, label, cmd }) => (
             <button key={label} onClick={() => send(cmd)}
-              className="flex items-center gap-1.5 shrink-0 text-[11px] font-medium px-3 py-1.5 rounded-xl bg-background border border-border hover:border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/20 transition-all touch-manipulation">
+              className="flex items-center gap-1.5 shrink-0 text-[11px] font-medium px-3 py-1.5 rounded-xl bg-background border border-border hover:border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950/20 transition-all touch-manipulation active:scale-[0.97]">
               <Icon className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />{label}
             </button>
           ))}
         </div>
       )}
 
-      {/* Messages */}
-      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Messages area */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto"
+      >
+        {/* Empty state — large centered avatar with glow, subtitle, suggestion chips */}
         {!hasMessages && (
-          <div className="flex flex-col items-center justify-center min-h-full px-5 py-12 text-center">
+          <div className="flex flex-col items-center justify-center min-h-full px-5 py-10 text-center">
+            {/* Large avatar with ambient glow */}
             <div className="relative mb-6">
-              <div className="absolute inset-0 rounded-full bg-violet-500/20 blur-2xl scale-150" />
-              <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-xl shadow-violet-500/25">
-                <Sparkles className="w-9 h-9 text-white" />
+              <div className="absolute inset-0 rounded-full bg-violet-500/25 blur-3xl scale-[2]" />
+              <div className="absolute inset-0 rounded-full bg-blue-500/15 blur-2xl scale-[1.5]" />
+              <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-violet-500 via-purple-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-violet-500/30">
+                <Sparkles className="w-11 h-11 text-white" />
               </div>
+              {/* Online dot */}
+              <span className="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-background shadow-sm" />
             </div>
-            <h2 className="text-2xl font-bold mb-2">Hi, I&apos;m Ava</h2>
+            <h2 className="text-2xl font-bold mb-1.5 tracking-tight">Hi, I&apos;m Ava</h2>
             <p className="text-muted-foreground text-sm mb-8 max-w-xs leading-relaxed">
-              {noteContext ? `I can chat and directly edit "${noteTitle || 'your note'}" — just ask.` : 'Your AI assistant. Ask me anything.'}
+              {noteContext
+                ? `I can chat and directly edit "${noteTitle || 'your note'}" — just ask.`
+                : 'Your AI assistant. Ask me anything or pick a suggestion below.'}
             </p>
-            <div className="w-full overflow-x-auto [scrollbar-width:none] -mx-5 px-5">
-              <div className="flex gap-2 pb-1 w-max sm:w-auto sm:flex-col sm:max-w-sm sm:mx-auto">
+            {/* Scrollable suggestion chips */}
+            <div className="w-full overflow-x-auto -mx-5 px-5">
+              <div className="flex gap-2 pb-1 w-max sm:w-auto sm:flex-col sm:max-w-xs sm:mx-auto">
                 {(noteContext ? [
-                  { icon: FileEdit,  text: 'Improve my note writing' },
-                  { icon: FilePlus,  text: 'Expand on my note ideas' },
+                  { icon: FileEdit,     text: 'Improve my note writing' },
+                  { icon: FilePlus,     text: 'Expand on my note ideas' },
                   { icon: AlignJustify, text: 'Summarize my note' },
                   ...SUGGESTIONS.slice(0, 2),
                 ] : SUGGESTIONS).map(({ icon: Icon, text }) => (
-                  <button key={text} onClick={() => send(text)}
-                    className="shrink-0 sm:shrink text-left flex items-center gap-3 px-4 py-3 rounded-2xl border border-border/70 bg-background hover:bg-accent active:scale-[0.98] transition-all min-h-[52px] touch-manipulation whitespace-nowrap sm:whitespace-normal">
-                    <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center shrink-0">
+                  <button
+                    key={text}
+                    onClick={() => send(text)}
+                    className="shrink-0 sm:shrink text-left flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border/60 bg-card hover:bg-accent hover:border-violet-300/60 active:scale-[0.97] transition-all min-h-[52px] touch-manipulation whitespace-nowrap sm:whitespace-normal shadow-sm"
+                  >
+                    <div className="w-9 h-9 rounded-2xl bg-violet-50 dark:bg-violet-950/50 flex items-center justify-center shrink-0 border border-violet-100 dark:border-violet-900/50">
                       <Icon className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                     </div>
-                    <span className="text-sm">{text}</span>
+                    <span className="text-sm font-medium">{text}</span>
                   </button>
                 ))}
               </div>
@@ -323,25 +381,41 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
           </div>
         )}
 
+        {/* Message list */}
         {hasMessages && (
-          <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+          <div className="px-3 py-4 space-y-3 max-w-3xl mx-auto">
             {messages.map((msg, idx) => {
               const isUser = msg.role === 'user'
               const isLast = idx === messages.length - 1
               return (
-                <div key={msg.id} className={cn('flex gap-3 items-end', isUser ? 'flex-row-reverse' : 'flex-row')}>
-                  <div className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0 mb-0.5',
-                    isUser ? 'bg-muted border border-border/60' : 'bg-gradient-to-br from-violet-600 to-blue-600 shadow-sm shadow-violet-500/20')}>
-                    {isUser ? <User className="w-4 h-4 text-muted-foreground" /> : <Sparkles className="w-4 h-4 text-white" />}
+                <div
+                  key={msg.id}
+                  className={cn('flex items-end gap-2', isUser ? 'flex-row-reverse' : 'flex-row')}
+                >
+                  {/* Avatar */}
+                  <div className={cn(
+                    'w-7 h-7 rounded-full flex items-center justify-center shrink-0 mb-0.5',
+                    isUser
+                      ? 'bg-muted border border-border/60'
+                      : 'bg-gradient-to-br from-violet-500 via-purple-500 to-blue-600 shadow-sm shadow-violet-500/20'
+                  )}>
+                    {isUser
+                      ? <User className="w-3.5 h-3.5 text-muted-foreground" />
+                      : <Sparkles className="w-3.5 h-3.5 text-white" />}
                   </div>
+
+                  {/* Bubble area */}
                   <div className={cn('flex-1 min-w-0', isUser && 'flex flex-col items-end')}>
                     {isUser ? (
+                      /* User bubble — right aligned, primary color, rounded-2xl rounded-br-sm */
                       <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-3 inline-block max-w-[85%] text-sm leading-relaxed whitespace-pre-wrap text-left shadow-sm">
                         {msg.noteAction && (
-                          <span className={cn('inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full mr-2 mb-1',
-                            msg.noteAction === 'replace' ? 'bg-orange-400/20 text-orange-200' :
-                            msg.noteAction === 'append'  ? 'bg-blue-400/20 text-blue-200' :
-                                                           'bg-green-400/20 text-green-200')}>
+                          <span className={cn(
+                            'inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mr-2 mb-1.5',
+                            msg.noteAction === 'replace' ? 'bg-orange-400/25 text-orange-200' :
+                            msg.noteAction === 'append'  ? 'bg-blue-400/25 text-blue-200' :
+                                                           'bg-green-400/25 text-green-200'
+                          )}>
                             <FilePen className="w-2.5 h-2.5" />
                             {msg.noteAction === 'replace' ? 'Replace' : msg.noteAction === 'append' ? 'Append' : 'Insert'}
                           </span>
@@ -349,47 +423,64 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
                         {msg.content}
                       </div>
                     ) : (
+                      /* Ava bubble — left aligned, muted bg, rounded-2xl rounded-bl-sm */
                       <div className="w-full">
                         {msg.streaming && !msg.content ? (
-                          <div className="inline-flex items-center gap-1.5 px-4 py-3.5 rounded-2xl rounded-bl-sm bg-muted/60 border border-border/40">
-                            <span className="text-xs text-muted-foreground mr-1">Ava is thinking</span>
-                            {[0,150,300].map(d => <span key={d} className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: `${d}ms` }} />)}
-                          </div>
+                          <TypingIndicator />
                         ) : (
-                          <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-7
-                            prose-p:leading-7 prose-p:my-2 prose-li:my-0.5 prose-headings:font-semibold prose-headings:my-3
-                            prose-pre:bg-zinc-950 prose-pre:rounded-xl prose-pre:text-xs prose-pre:border prose-pre:border-border
-                            prose-code:bg-muted prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.8em] prose-code:font-mono
-                            prose-blockquote:border-l-violet-400 prose-blockquote:text-muted-foreground prose-blockquote:not-italic
-                            prose-a:text-violet-600 dark:prose-a:text-violet-400 prose-a:no-underline hover:prose-a:underline">
+                          <div className={cn(
+                            'rounded-2xl rounded-bl-sm bg-muted/60 border border-border/40 px-4 py-3 shadow-sm',
+                            'prose prose-sm dark:prose-invert max-w-none text-sm leading-7',
+                            'prose-p:leading-7 prose-p:my-2 prose-li:my-0.5',
+                            'prose-headings:font-semibold prose-headings:my-3',
+                            'prose-pre:bg-zinc-950 prose-pre:rounded-xl prose-pre:text-xs prose-pre:border prose-pre:border-border',
+                            'prose-code:bg-muted prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.8em] prose-code:font-mono',
+                            'prose-blockquote:border-l-violet-400 prose-blockquote:text-muted-foreground prose-blockquote:not-italic',
+                            'prose-a:text-violet-600 dark:prose-a:text-violet-400 prose-a:no-underline hover:prose-a:underline'
+                          )}>
                             <ReactMarkdown>{msg.content || (msg.streaming ? '\u200b' : '')}</ReactMarkdown>
                             {msg.streaming && msg.content && (
                               <span className="inline-flex gap-1 items-end mt-1 ml-0.5">
-                                {[0,150,300].map(d => <span key={d} className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: `${d}ms` }} />)}
+                                {[0, 150, 300].map(d => (
+                                  <span key={d} className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: `${d}ms` }} />
+                                ))}
                               </span>
                             )}
                           </div>
                         )}
+
+                        {/* Action buttons below assistant messages */}
                         {!msg.streaming && msg.content && (
-                          <div className="flex flex-wrap items-center gap-1 mt-2">
-                            <button onClick={() => copy(msg.id, msg.content)}
-                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-xl hover:bg-accent transition-all min-h-[40px] touch-manipulation">
-                              {copiedId === msg.id ? <><Check className="w-3.5 h-3.5 text-emerald-500" />Copied</> : <><Copy className="w-3.5 h-3.5" />Copy</>}
+                          <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                            <button
+                              onClick={() => copy(msg.id, msg.content)}
+                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-xl hover:bg-accent transition-all min-h-[40px] touch-manipulation active:scale-[0.97]"
+                            >
+                              {copiedId === msg.id
+                                ? <><Check className="w-3.5 h-3.5 text-emerald-500" />Copied</>
+                                : <><Copy className="w-3.5 h-3.5" />Copy</>}
                             </button>
                             {isLast && !streaming && (
-                              <button onClick={regenerate}
-                                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-xl hover:bg-accent transition-all min-h-[40px] touch-manipulation">
+                              <button
+                                onClick={regenerate}
+                                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-xl hover:bg-accent transition-all min-h-[40px] touch-manipulation active:scale-[0.97]"
+                              >
                                 <RefreshCw className="w-3.5 h-3.5" />Retry
                               </button>
                             )}
+                            {/* Note edit action buttons — show below assistant messages when noteContext present */}
                             {hasNoteEdit && !msg.noteAction && (
                               <>
-                                <button onClick={() => applyToNote(msg.content, 'replace')}
-                                  className="flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400 px-3 py-2 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-all min-h-[40px] touch-manipulation border border-violet-200/50 dark:border-violet-800/40">
+                                <button
+                                  onClick={() => applyToNote(msg.content, 'replace')}
+                                  className="flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400 px-3 py-2 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-all min-h-[40px] touch-manipulation active:scale-[0.97] border border-violet-200/60 dark:border-violet-800/40"
+                                >
                                   <FileEdit className="w-3.5 h-3.5" />Replace note
                                 </button>
-                                <button onClick={() => applyToNote(msg.content, 'append')}
-                                  className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 px-3 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all min-h-[40px] touch-manipulation border border-blue-200/50 dark:border-blue-800/40">
+                                <button
+                                  onClick={() => applyToNote(msg.content, 'append')}
+                                  className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 px-3 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all min-h-[40px] touch-manipulation active:scale-[0.97] border border-blue-200/60 dark:border-blue-800/40"
+                                >
                                   <FilePlus className="w-3.5 h-3.5" />Append
                                 </button>
                               </>
@@ -407,34 +498,58 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
         )}
       </div>
 
+      {/* Scroll-to-bottom button */}
       {!atBottom && (
         <div className="absolute right-4 bottom-28 z-10">
-          <button onClick={() => { setAtBottom(true); bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }}
-            className="w-10 h-10 rounded-full bg-background border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:bg-accent transition-all touch-manipulation">
+          <button
+            onClick={() => { setAtBottom(true); bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }}
+            className="w-10 h-10 rounded-full bg-background border border-border shadow-lg flex items-center justify-center text-muted-foreground hover:bg-accent transition-all touch-manipulation active:scale-[0.95]"
+          >
             <ChevronDown className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* Input */}
-      <div className="shrink-0 border-t border-border/60 bg-background/98 backdrop-blur-md"
-        style={{ paddingBottom: 'max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))' }}>
-        <div className="px-4 pt-3 pb-1 max-w-3xl mx-auto">
-          <div className={cn('flex items-end gap-2 rounded-3xl border bg-background transition-all',
-            'border-border/80 focus-within:border-violet-400/70 dark:focus-within:border-violet-500/60',
-            'focus-within:ring-2 focus-within:ring-violet-500/10 px-4 py-3 shadow-sm focus-within:shadow-lg')}>
-            <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={onKey}
+      {/* Input bar — rounded-3xl container, auto-resize textarea, violet send button when has text */}
+      <div
+        className="shrink-0 border-t border-border/50 bg-background/98 backdrop-blur-xl"
+        style={{ paddingBottom: 'max(1.25rem, calc(env(safe-area-inset-bottom) + 0.5rem))' }}
+      >
+        <div className="px-3 pt-3 pb-1 max-w-3xl mx-auto">
+          <div className={cn(
+            'flex items-end gap-2 rounded-3xl border bg-background transition-all duration-200',
+            'border-border/70 focus-within:border-violet-400/80 dark:focus-within:border-violet-500/70',
+            'focus-within:ring-2 focus-within:ring-violet-500/15',
+            'px-4 py-3 shadow-sm focus-within:shadow-md'
+          )}>
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={onInputChange}
+              onKeyDown={onKey}
               placeholder={noteContext ? 'Ask Ava to write, rewrite, or improve your note…' : 'Message Ava…'}
-              rows={1} disabled={streaming}
-              className="flex-1 bg-transparent text-sm outline-none resize-none leading-relaxed max-h-36 disabled:opacity-40 placeholder:text-muted-foreground/50 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" />
+              rows={1}
+              disabled={streaming}
+              className="flex-1 bg-transparent text-sm outline-none resize-none leading-relaxed max-h-36 disabled:opacity-40 placeholder:text-muted-foreground/50 py-0.5"
+            />
             {streaming ? (
-              <button onClick={stop}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-foreground text-background text-xs font-medium hover:bg-foreground/80 active:scale-[0.97] transition-all shrink-0 min-h-[40px] touch-manipulation">
+              <button
+                onClick={stop}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-foreground text-background text-xs font-semibold hover:bg-foreground/80 active:scale-[0.97] transition-all shrink-0 min-h-[40px] touch-manipulation"
+              >
                 <Square className="w-3 h-3 fill-background" />Stop
               </button>
             ) : (
-              <button onClick={() => send(input)} disabled={!input.trim()}
-                className="w-9 h-9 rounded-2xl bg-violet-600 text-white flex items-center justify-center shrink-0 disabled:opacity-25 hover:bg-violet-700 active:scale-[0.95] transition-all shadow-sm touch-manipulation">
+              <button
+                onClick={() => send(input)}
+                disabled={!input.trim()}
+                className={cn(
+                  'w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-200 shadow-sm touch-manipulation active:scale-[0.93]',
+                  input.trim()
+                    ? 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-500/30'
+                    : 'bg-muted text-muted-foreground opacity-40 cursor-not-allowed'
+                )}
+              >
                 <Send className="w-4 h-4" />
               </button>
             )}

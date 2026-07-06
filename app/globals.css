@@ -101,8 +101,26 @@ body {
 }
 
 /* iOS-feel smooth scroll */
-html { scroll-behavior: smooth; }
-* { -webkit-tap-highlight-color: transparent; }
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide scrollbars globally for iOS-like feel */
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
 /* iOS safe area support */
 .safe-area-bottom {
@@ -110,6 +128,12 @@ html { scroll-behavior: smooth; }
 }
 .safe-area-top {
   padding-top: max(0rem, env(safe-area-inset-top));
+}
+
+/* Smooth touch interactions */
+button, a, [role="button"] {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Tiptap prose styles */

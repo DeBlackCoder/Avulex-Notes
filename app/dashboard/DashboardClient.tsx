@@ -89,10 +89,19 @@ export function DashboardClient({ user }: Props) {
         {/* Greeting section */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-0.5">{today}</p>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Good {greeting}, {user.displayName?.split(' ')[0]}
+            <p className="text-xs font-medium text-muted-foreground mb-1">{today}</p>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight leading-tight">
+              Good {greeting},
             </h1>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight leading-tight text-primary">
+              {user.displayName?.split(' ')[0]}
+            </h2>
+          </div>
+          {/* Quick stats summary chip */}
+          <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-muted/50 border border-border/40 shrink-0 mt-1">
+            <FileText className="w-3.5 h-3.5 text-violet-500" />
+            <span className="text-xs font-semibold">{totalNotes}</span>
+            <span className="text-xs text-muted-foreground">notes</span>
           </div>
         </div>
 
@@ -112,29 +121,30 @@ export function DashboardClient({ user }: Props) {
           ))}
         </div>
 
-        {/* Tab pills */}
-        <div className="flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 sm:mx-0 px-4 sm:px-0 pb-1">
+        {/* Tab pills with sliding indicator style */}
+        <div className="flex gap-2 overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 pb-1">
           {TABS.map(({ key, label, icon: Icon }) => {
             const active = activeTab === key
+            const count = tabNotes[key].length
             return (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
                 className={cn(
-                  'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap shrink-0 transition-all duration-150 touch-manipulation active:scale-[0.96]',
+                  'flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-sm font-medium whitespace-nowrap shrink-0 transition-all duration-200 touch-manipulation active:scale-[0.95]',
                   active
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/40'
+                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                    : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/40'
                 )}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {label}
-                {tabNotes[key].length > 0 && (
+                {count > 0 && (
                   <span className={cn(
-                    'text-[10px] px-1.5 py-0.5 rounded-full font-semibold',
-                    active ? 'bg-white/20' : 'bg-muted-foreground/10'
+                    'text-[10px] px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center',
+                    active ? 'bg-white/20' : 'bg-muted-foreground/15'
                   )}>
-                    {tabNotes[key].length}
+                    {count}
                   </span>
                 )}
               </button>
