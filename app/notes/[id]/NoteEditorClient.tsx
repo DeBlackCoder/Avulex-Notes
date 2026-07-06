@@ -1,7 +1,6 @@
 'use client'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import dynamic from 'next/dynamic'
 import { useNote, useUpdateNote } from '@/hooks/useNotes'
 import { AppShell } from '@/components/layout/AppShell'
 import { Button } from '@/components/ui/button'
@@ -25,18 +24,11 @@ import type { SessionPayload } from '@/lib/session'
 import type { LocalNote } from '@/lib/db'
 import type { EditorHandle } from '@/components/editor/RichTextEditor'
 
-const RichTextEditor = dynamic(
-  () => import('@/components/editor/RichTextEditor').then(m => m.RichTextEditor),
-  { ssr: false, loading: () => <div className="flex-1 flex items-center justify-center"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div> }
-)
-const AIPanel = dynamic(
-  () => import('@/components/ai/AIPanel').then(m => m.AIPanel),
-  { ssr: false, loading: () => <div className="flex-1 flex items-center justify-center"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div> }
-)
-const AvaChat = dynamic(
-  () => import('@/components/ai/AvaChat').then(m => m.AvaChat),
-  { ssr: false, loading: () => <div className="flex-1 flex items-center justify-center"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div> }
-)
+// Import directly — NOT via next/dynamic so forwardRef works
+// The RichTextEditor has its own mounted guard for SSR safety
+import { RichTextEditor } from '@/components/editor/RichTextEditor'
+import { AIPanel } from '@/components/ai/AIPanel'
+import { AvaChat } from '@/components/ai/AvaChat'
 
 interface Props { noteId: string; user: SessionPayload }
 
@@ -45,7 +37,7 @@ export function NoteEditorClient({ noteId, user }: Props) {
   const { data: note, isLoading } = useNote(noteId)
   const updateNote = useUpdateNote()
 
-  // Editor ref — gives us direct insert/replace commands
+  // Direct ref to editor — works because we import directly (no dynamic wrapper)
   const editorRef = useRef<EditorHandle>(null)
 
   const [title, setTitle] = useState('')
@@ -56,7 +48,10 @@ export function NoteEditorClient({ noteId, user }: Props) {
   const [historyEntries, setHistoryEntries] = useState<Array<{ _id: string; savedAt: string }>>([])
   const [aiPanelOpen, setAiPanelOpen] = useState(false)
   const [aiMode, setAiMode] = useState<'actions' | 'chat'>('actions')
+  const [mounted, setMounted] = useState(false)
   const initialized = useRef(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   if (note && !initialized.current) {
     setTitle(note.title)
@@ -126,13 +121,12 @@ export function NoteEditorClient({ noteId, user }: Props) {
   }
 
   /**
-   * AI apply — called from AIPanel with the result text.
-   * mode:
-   *   'replace' — replace entire note content
-   *   'insert'  — insert at cursor / append (default)
-   *   'title'   — set as note title
+   * AI apply — receives text from AIPanel or AvaChat and applies it to the editor.
+   * Uses editorRef.current directly — works because RichTextEditor is a direct import with forwardRef.
    */
   const handleAIApply = useCallback((text: string, mode: 'replace' | 'insert' | 'title' = 'insert') => {
+    console.log('[AI Apply]', { mode, textLength: text.length, editorRef: !!editorRef.current })
+
     if (mode === 'title') {
       const t = text.slice(0, 255)
       setTitle(t)
@@ -140,24 +134,32 @@ export function NoteEditorClient({ noteId, user }: Props) {
       toast.success('Title updated')
       return
     }
-    if (mode === 'replace') {
-      editorRef.current?.replaceContent(text)
-      toast.success('Note content replaced')
-    } else {
-      editorRef.current?.insertAtCursor(text)
-      toast.success('Inserted into note')
+
+    if (!editorRef.current) {
+      toast.error('Editor not ready — try again')
+      return
     }
-    // Trigger save after AI applies content
+
+    if (mode === 'replace') {
+      editorRef.current.replaceContent(text)
+      toast.success('Note rewritten by AI')
+    } else {
+      editorRef.current.appendContent(text)
+      toast.success('AI content added to note')
+    }
+
+    // Read back the new editor state and save
     setTimeout(() => {
-      const newJson = editorRef.current?.getJSON() ?? content
-      const newText = editorRef.current?.getPlainText() ?? plainText
+      if (!editorRef.current) return
+      const newJson = editorRef.current.getJSON()
+      const newText = editorRef.current.getPlainText()
       setContent(newJson)
       setPlainText(newText)
       save(title, newJson, newText)
-    }, 100)
+    }, 200)
   }, [content, plainText, title, save])
 
-  if (isLoading) {
+  if (isLoading || !mounted) {
     return (
       <AppShell>
         <div className="flex items-center justify-center h-full">
@@ -205,7 +207,6 @@ export function NoteEditorClient({ noteId, user }: Props) {
               {saveStatus === 'saved' && <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />}
             </div>
 
-            {/* AI button — always visible */}
             <button
               onClick={() => setAiPanelOpen(v => !v)}
               className={cn(
@@ -249,7 +250,7 @@ export function NoteEditorClient({ noteId, user }: Props) {
             </DropdownMenu>
           </div>
 
-          {/* Editor */}
+          {/* Editor — direct import so ref forwarding works */}
           <div className="flex-1 overflow-hidden">
             <RichTextEditor
               ref={editorRef}
@@ -261,12 +262,12 @@ export function NoteEditorClient({ noteId, user }: Props) {
           </div>
         </div>
 
-        {/* AI Panel — desktop side panel */}
+        {/* AI Panel */}
         {aiPanelOpen && (
           <>
             <div className="fixed inset-0 bg-black/30 z-30 md:hidden" onClick={() => setAiPanelOpen(false)} />
 
-            {/* Desktop */}
+            {/* Desktop side panel */}
             <div className="hidden md:flex md:w-80 md:border-l md:border-border md:flex-col md:shrink-0 bg-background z-40">
               <AIPanelTabs
                 plainText={plainText}
@@ -323,7 +324,6 @@ export function NoteEditorClient({ noteId, user }: Props) {
   )
 }
 
-// ── AI Panel tabs (Actions / Chat) ──────────────────────────────────────────
 function AIPanelTabs({
   plainText, title, aiMode, setAiMode, onApply, onClose,
 }: {
@@ -336,7 +336,6 @@ function AIPanelTabs({
 }) {
   return (
     <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
-      {/* Tab bar */}
       <div className="flex gap-1 p-2 border-b border-border shrink-0">
         <button
           onClick={() => setAiMode('actions')}
@@ -345,8 +344,7 @@ function AIPanelTabs({
             aiMode === 'actions' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent text-muted-foreground'
           )}
         >
-          <Zap className="w-3.5 h-3.5" />
-          Actions
+          <Zap className="w-3.5 h-3.5" /> Actions
         </button>
         <button
           onClick={() => setAiMode('chat')}
@@ -355,8 +353,7 @@ function AIPanelTabs({
             aiMode === 'chat' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent text-muted-foreground'
           )}
         >
-          <MessageSquare className="w-3.5 h-3.5" />
-          Chat with Ava
+          <MessageSquare className="w-3.5 h-3.5" /> Chat with Ava
         </button>
       </div>
 
@@ -367,10 +364,7 @@ function AIPanelTabs({
               noteContext={plainText}
               noteTitle={title}
               onClose={onClose}
-              onEditNote={(text, mode) => {
-                // Map AvaChat's 'replace'|'insert'|'append' to AIPanel's apply modes
-                onApply(text, mode === 'replace' ? 'replace' : mode === 'append' ? 'insert' : 'insert')
-              }}
+              onEditNote={(text, mode) => onApply(text, mode === 'replace' ? 'replace' : 'insert')}
               onRenameNote={(newTitle) => onApply(newTitle, 'title')}
             />
         }

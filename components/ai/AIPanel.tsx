@@ -109,18 +109,22 @@ export function AIPanel({ content, selection, noteTitle, onApply, onClose }: AIP
   const apply = () => {
     if (!result) return
     if (resultAction === 'generate-title') {
-      onApply(result, 'title'); onClose(); toast.success('Title updated')
+      onApply(result, 'title')
+      toast.success('Title updated')
     } else if (
       resultAction === 'improve' || resultAction === 'fix-grammar' ||
       resultAction === 'make-professional' || resultAction === 'simplify' ||
       resultAction === 'translate'
     ) {
-      // Writing rewrites — replace whole content
-      onApply(result, 'replace'); onClose(); toast.success('Note rewritten')
+      onApply(result, 'replace')
+      toast.success('Note rewritten by AI')
     } else {
-      // Summaries, tasks, generated content — insert/append
-      onApply(result, 'insert'); onClose(); toast.success('Inserted into note')
+      onApply(result, 'insert')
+      toast.success('Added to note')
     }
+    // Clear result after applying so user can run another action
+    setResult(null)
+    setResultAction(null)
   }
 
   const canApply = !!result && resultAction !== 'generate-tags'
