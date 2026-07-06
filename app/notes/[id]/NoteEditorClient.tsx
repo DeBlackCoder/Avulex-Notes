@@ -363,7 +363,16 @@ function AIPanelTabs({
       <div className="flex-1 min-h-0 overflow-hidden">
         {aiMode === 'actions'
           ? <AIPanel content={plainText} noteTitle={title} onApply={onApply} onClose={onClose} />
-          : <AvaChat noteContext={plainText} noteTitle={title} onClose={onClose} />
+          : <AvaChat
+              noteContext={plainText}
+              noteTitle={title}
+              onClose={onClose}
+              onEditNote={(text, mode) => {
+                // Map AvaChat's 'replace'|'insert'|'append' to AIPanel's apply modes
+                onApply(text, mode === 'replace' ? 'replace' : mode === 'append' ? 'insert' : 'insert')
+              }}
+              onRenameNote={(newTitle) => onApply(newTitle, 'title')}
+            />
         }
       </div>
     </div>

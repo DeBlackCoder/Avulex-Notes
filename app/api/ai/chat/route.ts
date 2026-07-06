@@ -22,18 +22,19 @@ export async function POST(request: NextRequest) {
   const session = await getSession()
   if (!session) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
 
-  const { messages, noteContext } = await request.json() as {
+  const { messages, noteContext, systemExtra } = await request.json() as {
     messages: ChatMsg[]
     noteContext?: string
+    systemExtra?: string
   }
 
   if (!messages?.length) {
     return new Response(JSON.stringify({ error: 'No messages' }), { status: 400 })
   }
 
-  const system = noteContext
+  const system = (noteContext
     ? `${SYSTEM}\n\nThe user has this note open:\n\`\`\`\n${noteContext.slice(0, 3000)}\n\`\`\``
-    : SYSTEM
+    : SYSTEM) + (systemExtra || '')
 
   try {
     return await streamChat(messages, system)
