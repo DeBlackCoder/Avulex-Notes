@@ -14,16 +14,27 @@ export default function ArchivePage() {
 
   return (
     <AppShell>
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="flex items-center gap-2 mb-6">
-          <Archive className="w-5 h-5 text-muted-foreground" />
-          <h1 className="text-xl font-semibold">Archive</h1>
-          <span className="text-sm text-muted-foreground">({notes.length})</span>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
+        {/* Header */}
+        <div className="flex items-center gap-2.5 mb-6">
+          <div className="w-9 h-9 rounded-xl bg-muted/60 border border-border/50 flex items-center justify-center shrink-0">
+            <Archive className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold leading-none">Archive</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{notes.length} {notes.length === 1 ? 'note' : 'notes'}</p>
+          </div>
         </div>
+
         {notes.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
-            <Archive className="w-12 h-12 opacity-20" />
-            <p className="text-sm">No archived notes</p>
+          <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
+            <div className="w-16 h-16 rounded-2xl bg-muted/60 border border-border/40 flex items-center justify-center">
+              <Archive className="w-7 h-7 opacity-30" />
+            </div>
+            <div className="text-center space-y-1">
+              <p className="font-medium text-foreground text-sm">Nothing archived yet</p>
+              <p className="text-xs">Archived notes will appear here</p>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

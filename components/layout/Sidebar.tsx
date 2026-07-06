@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import {
   LayoutDashboard, BookOpen, Star, Archive, Trash2,
   Plus, Settings, LogOut, MoreHorizontal, Pencil, Trash,
-  Clock, Monitor,
+  Clock, Monitor, MessageSquare,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -43,12 +43,13 @@ export function Sidebar({ workspaceId, onSelectNotebook, selectedNotebook, onClo
   const [nbName, setNbName] = useState('')
 
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-    { icon: Star, label: 'Favorites', href: '/favorites' },
-    { icon: Archive, label: 'Archive', href: '/archive' },
-    { icon: Trash2, label: 'Trash', href: '/trash' },
-    { icon: Clock, label: 'Activity', href: '/activity' },
-    { icon: Monitor, label: 'Devices', href: '/devices' },
+    { icon: LayoutDashboard, label: 'Dashboard',   href: '/dashboard' },
+    { icon: Star,            label: 'Favorites',   href: '/favorites' },
+    { icon: MessageSquare,   label: 'Ava Chats',   href: '/conversations' },
+    { icon: Archive,         label: 'Archive',     href: '/archive' },
+    { icon: Trash2,          label: 'Trash',       href: '/trash' },
+    { icon: Clock,           label: 'Activity',    href: '/activity' },
+    { icon: Monitor,         label: 'Devices',     href: '/devices' },
   ]
 
   const navigate = (href: string) => {
@@ -84,12 +85,15 @@ export function Sidebar({ workspaceId, onSelectNotebook, selectedNotebook, onClo
 
   return (
     <>
-      <aside className="w-72 md:w-64 flex flex-col h-full bg-sidebar border-r border-border shadow-xl md:shadow-none">
+      <aside className="w-72 md:w-64 flex flex-col h-full bg-sidebar border-r border-border shadow-2xl md:shadow-none">
 
         {/* Brand header */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-border shrink-0">
-          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shadow-sm">
-            <span className="text-primary-foreground text-sm font-bold">S</span>
+          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-500 flex items-center justify-center shadow-md shadow-violet-500/20">
+            <svg width="18" height="18" viewBox="0 0 32 32" fill="none" aria-hidden>
+              <path d="M8 24L16 8L24 24" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M10.5 19h11" stroke="white" strokeWidth="3.5" strokeLinecap="round"/>
+            </svg>
           </div>
           <div>
             <p className="font-bold text-sm leading-none">Avulex Notes</p>
@@ -100,42 +104,27 @@ export function Sidebar({ workspaceId, onSelectNotebook, selectedNotebook, onClo
         <ScrollArea className="flex-1">
           <div className="py-3 px-2">
 
-            {/* Main nav — hidden on mobile (shown in bottom bar instead) */}
-            <div className="hidden md:block mb-1">
-              {navItems.map(({ icon: Icon, label, href }) => (
-                <button
-                  key={href}
-                  onClick={() => navigate(href)}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-colors',
-                    pathname === href
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                  )}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* On mobile, show full nav in sidebar too */}
-            <div className="md:hidden mb-1">
-              {navItems.map(({ icon: Icon, label, href }) => (
-                <button
-                  key={href}
-                  onClick={() => navigate(href)}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors',
-                    pathname === href
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                  )}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  {label}
-                </button>
-              ))}
+            {/* Navigation items */}
+            <div className="mb-1 space-y-0.5">
+              {navItems.map(({ icon: Icon, label, href }) => {
+                const active = pathname === href
+                return (
+                  <button
+                    key={href}
+                    onClick={() => navigate(href)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150',
+                      'touch-manipulation active:scale-[0.98]',
+                      active
+                        ? 'bg-primary/10 text-primary font-semibold'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    )}
+                  >
+                    <Icon className={cn('w-4 h-4 shrink-0', active && 'text-primary')} />
+                    {label}
+                  </button>
+                )
+              })}
             </div>
 
             <Separator className="my-3" />
@@ -147,7 +136,7 @@ export function Sidebar({ workspaceId, onSelectNotebook, selectedNotebook, onClo
               </span>
               <button
                 onClick={() => { setNbName(''); setCreateOpen(true) }}
-                className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
+                className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-accent active:bg-accent/80 transition-all duration-150 active:scale-[0.95] text-muted-foreground hover:text-foreground touch-manipulation"
               >
                 <Plus className="w-3.5 h-3.5" />
               </button>
@@ -156,63 +145,69 @@ export function Sidebar({ workspaceId, onSelectNotebook, selectedNotebook, onClo
             {notebooks.length === 0 && (
               <button
                 onClick={() => { setNbName(''); setCreateOpen(true) }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-muted-foreground border border-dashed border-border hover:border-primary/30 hover:bg-accent/50 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-muted-foreground border border-dashed border-border hover:border-primary/30 hover:bg-accent/50 transition-all duration-150 active:scale-[0.98] touch-manipulation"
               >
                 <Plus className="w-3.5 h-3.5" />
                 New notebook
               </button>
             )}
 
-            {notebooks.map(nb => (
-              <div key={nb.id} className="group flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    onSelectNotebook(nb.id)
-                    navigate(`/notes?notebook=${nb.id}`)
-                  }}
-                  className={cn(
-                    'flex-1 flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-colors text-left',
-                    selectedNotebook === nb.id
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                  )}
-                >
-                  <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{nb.name}</span>
-                </button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger className={cn(
-                    'w-7 h-7 rounded-lg flex items-center justify-center transition-colors',
-                    'opacity-0 group-hover:opacity-100 hover:bg-accent text-muted-foreground'
-                  )}>
-                    <MoreHorizontal className="w-3.5 h-3.5" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
-                    <DropdownMenuItem onClick={() => {
-                      setRenameTarget({ id: nb.id, name: nb.name })
-                      setNbName(nb.name)
-                      setRenameOpen(true)
-                    }}>
-                      <Pencil className="w-3.5 h-3.5 mr-2" /> Rename
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleDelete(nb.id, nb.name)} className="text-destructive">
-                      <Trash className="w-3.5 h-3.5 mr-2" /> Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ))}
+            <div className="space-y-0.5">
+              {notebooks.map(nb => (
+                <div key={nb.id} className="group flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      onSelectNotebook(nb.id)
+                      navigate(`/notes?notebook=${nb.id}`)
+                    }}
+                    className={cn(
+                      'flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all duration-150 text-left',
+                      'touch-manipulation active:scale-[0.98]',
+                      selectedNotebook === nb.id
+                        ? 'bg-primary/10 text-primary font-semibold'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                    )}
+                  >
+                    <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{nb.name}</span>
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className={cn(
+                      'w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-150',
+                      'opacity-0 group-hover:opacity-100 hover:bg-accent active:bg-accent/80 text-muted-foreground',
+                      'touch-manipulation active:scale-[0.95]'
+                    )}>
+                      <MoreHorizontal className="w-3.5 h-3.5" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem onClick={() => {
+                        setRenameTarget({ id: nb.id, name: nb.name })
+                        setNbName(nb.name)
+                        setRenameOpen(true)
+                      }}>
+                        <Pencil className="w-3.5 h-3.5 mr-2" /> Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleDelete(nb.id, nb.name)} className="text-destructive">
+                        <Trash className="w-3.5 h-3.5 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))}
+            </div>
           </div>
         </ScrollArea>
 
         {/* User footer */}
         <div className="border-t border-border p-3 shrink-0">
           <DropdownMenu>
-            <DropdownMenuTrigger className="w-full flex items-center gap-3 rounded-xl p-2.5 hover:bg-accent transition-colors text-left">
-              <Avatar className="w-8 h-8 shrink-0">
+            <DropdownMenuTrigger className="w-full flex items-center gap-3 rounded-2xl p-2.5 hover:bg-accent active:bg-accent/80 transition-all duration-150 text-left active:scale-[0.98] touch-manipulation">
+              <Avatar className="w-9 h-9 shrink-0">
                 <AvatarImage src={user?.avatarUrl} />
-                <AvatarFallback className="text-xs font-bold">{user?.displayName?.[0] ?? 'U'}</AvatarFallback>
+                <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-violet-500 to-blue-500 text-white">
+                  {user?.displayName?.[0] ?? 'U'}
+                </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold truncate">{user?.displayName}</p>

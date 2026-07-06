@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useSync } from '@/hooks/useSync'
 import { SyncStatusBadge } from '@/components/sync-status'
 import { Button } from '@/components/ui/button'
-import { Menu, Search, X, LayoutDashboard, Star, Archive, Trash2, Clock, Plus, Sparkles, MessageSquare } from 'lucide-react'
+import { Menu, Search, X, LayoutDashboard, Star, Archive, Clock, Plus, Sparkles, MessageSquare } from 'lucide-react'
 import { SearchModal } from '@/components/search/SearchModal'
 import { cn } from '@/lib/utils'
 import { useCreateNote } from '@/hooks/useNotes'
@@ -24,7 +24,7 @@ interface Props {
 const BOTTOM_NAV = [
   { icon: LayoutDashboard, label: 'Home',     href: '/dashboard' },
   { icon: Star,           label: 'Favorites', href: '/favorites' },
-  { icon: MessageSquare,  label: 'Ava AI',    href: '/chat' },
+  { icon: MessageSquare,  label: 'Ava',       href: '/chat' },
   { icon: Archive,        label: 'Archive',   href: '/archive' },
   { icon: Clock,          label: 'Activity',  href: '/activity' },
 ]
@@ -85,7 +85,7 @@ export function AppShell({ children, workspaceId = '' }: Props) {
       {/* Mobile overlay */}
       {!isDesktop && sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -108,68 +108,68 @@ export function AppShell({ children, workspaceId = '' }: Props) {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
 
         {/* Top header */}
-        <header className="flex items-center gap-2 px-4 py-3 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-20 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0 -ml-1"
+        <header className="flex items-center gap-2 px-3 py-2 border-b border-border bg-background/95 backdrop-blur-md sticky top-0 z-20 shrink-0 safe-area-top min-h-[56px]">
+          <button
+            className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-accent active:bg-accent/80 transition-all duration-150 active:scale-[0.97] touch-manipulation -ml-1 text-foreground"
             onClick={() => setSidebarOpen(v => !v)}
           >
             {sidebarOpen && !isDesktop ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
+          </button>
 
-          {/* Page title from pathname */}
+          {/* Page title — mobile only */}
           <span className="font-semibold text-sm truncate flex-1 md:hidden">
             {getPageTitle(pathname)}
           </span>
 
           <div className="hidden md:flex flex-1" />
 
-          {/* Search — full button on desktop, icon on mobile */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2 text-muted-foreground text-xs hidden md:flex"
+          {/* Search — full pill on desktop, icon on mobile */}
+          <button
+            className="gap-2 text-muted-foreground text-xs hidden md:flex items-center h-9 px-3 rounded-xl border border-border hover:bg-accent transition-all duration-150"
             onClick={() => setSearchOpen(true)}
           >
             <Search className="w-3.5 h-3.5" />
             Search notes…
             <kbd className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded font-mono">⌘K</kbd>
-          </Button>
+          </button>
 
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSearchOpen(true)}>
+          <button
+            className="md:hidden w-10 h-10 rounded-xl flex items-center justify-center hover:bg-accent active:bg-accent/80 transition-all duration-150 active:scale-[0.97] touch-manipulation text-muted-foreground"
+            onClick={() => setSearchOpen(true)}
+          >
             <Search className="w-5 h-5" />
-          </Button>
+          </button>
 
           {/* Sync status — desktop only */}
           <SyncStatusBadge status={status} lastSync={lastSync} className="hidden lg:flex" />
 
-          {/* Ask AI button — desktop */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5 hidden md:flex text-xs h-8 rounded-xl border-primary/30 text-primary hover:bg-primary/5"
+          {/* Ask AI — desktop */}
+          <button
+            className="gap-1.5 hidden md:flex items-center text-xs h-9 px-3 rounded-xl border border-primary/30 text-primary hover:bg-primary/5 transition-all duration-150 font-medium"
             onClick={() => setAskOpen(true)}
           >
             <Sparkles className="w-3.5 h-3.5" />
             Ask AI
-          </Button>
+          </button>
 
-          {/* New note FAB on mobile header */}
-          <Button size="icon" className="md:hidden w-8 h-8 rounded-full" onClick={handleNewNote}>
+          {/* New note button — mobile header */}
+          <button
+            className="md:hidden w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-sm transition-all duration-150 active:scale-[0.95] touch-manipulation"
+            onClick={handleNewNote}
+          >
             <Plus className="w-4 h-4" />
-          </Button>
+          </button>
         </header>
 
-        {/* Page content — with bottom padding for mobile nav */}
-        <main className="flex-1 overflow-auto pb-20 md:pb-0">
+        {/* Page content — bottom padding for mobile nav */}
+        <main className="flex-1 overflow-auto pb-20 md:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {children}
         </main>
       </div>
 
       {/* Mobile bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-20 md:hidden bg-background/95 backdrop-blur-sm border-t border-border safe-area-bottom">
-        <div className="flex items-center justify-around px-2 py-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-20 md:hidden bg-background/90 backdrop-blur-xl border-t border-border/60" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="flex items-center justify-around px-1 py-1">
           {BOTTOM_NAV.map(({ icon: Icon, label, href }) => {
             const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
             const isAva = href === '/chat'
@@ -178,25 +178,31 @@ export function AppShell({ children, workspaceId = '' }: Props) {
                 key={href}
                 onClick={() => router.push(href)}
                 className={cn(
-                  'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-colors min-w-0',
-                  isAva
-                    ? 'px-2'
-                    : active ? 'text-primary' : 'text-muted-foreground'
+                  'flex flex-col items-center gap-1 px-3 py-2 rounded-2xl transition-all duration-150 min-w-0 touch-manipulation',
+                  'active:scale-[0.92]',
+                  isAva ? 'px-2' : active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 {isAva ? (
                   <div className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-md',
+                    'w-11 h-11 rounded-full flex items-center justify-center transition-all duration-150 shadow-md',
                     active
-                      ? 'bg-primary text-primary-foreground scale-110'
-                      : 'bg-gradient-to-br from-violet-500 to-blue-500 text-white'
+                      ? 'bg-primary text-primary-foreground scale-110 shadow-primary/30'
+                      : 'bg-gradient-to-br from-violet-500 to-blue-500 text-white shadow-violet-500/30'
                   )}>
                     <Icon className="w-5 h-5" />
                   </div>
                 ) : (
                   <>
-                    <Icon className={cn('w-5 h-5', active && 'fill-primary/20')} />
-                    <span className="text-[10px] font-medium leading-none">{label}</span>
+                    <div className={cn(
+                      'w-8 h-6 rounded-full flex items-center justify-center transition-all duration-150',
+                      active && 'bg-primary/15'
+                    )}>
+                      <Icon className={cn('w-5 h-5 transition-all duration-150', active && 'scale-110')} />
+                    </div>
+                    <span className={cn('text-[10px] font-medium leading-none transition-all duration-150', active && 'font-semibold')}>
+                      {label}
+                    </span>
                   </>
                 )}
               </button>
@@ -207,11 +213,14 @@ export function AppShell({ children, workspaceId = '' }: Props) {
 
       <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
 
-      {/* Ask Notes AI panel — slide-in from right */}
+      {/* Ask AI panel — slide-in from right */}
       {askOpen && (
         <>
-          <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setAskOpen(false)} />
-          <div className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-96 shadow-2xl border-l border-border">
+          <div
+            className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm"
+            onClick={() => setAskOpen(false)}
+          />
+          <div className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[420px] shadow-2xl border-l border-border transition-transform duration-300">
             <AvaChat onClose={() => setAskOpen(false)} />
           </div>
         </>

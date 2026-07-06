@@ -99,6 +99,77 @@ const PushSubscriptionSchema = new Schema({
   enabled: { type: Boolean, default: true },
 }, { timestamps: true })
 
+// ── NEW COLLECTIONS ──────────────────────────────────────────────────────────
+
+// AI Conversations — persists full Ava chat history per user
+const AIConversationSchema = new Schema({
+  _id: { type: String },
+  userId: { type: String, required: true, index: true },
+  title: { type: String, default: 'New conversation' },
+  messages: [{
+    role: { type: String, enum: ['user', 'assistant'], required: true },
+    content: { type: String, required: true },
+    timestamp: { type: Date, default: Date.now },
+  }],
+  noteContext: { type: String, default: null },   // note title if conversation was started from a note
+  noteId: { type: String, default: null },
+  pinned: { type: Boolean, default: false },
+  archived: { type: Boolean, default: false },
+}, { timestamps: true, _id: false })
+
+// Settings — per-user app preferences synced across devices
+const SettingsSchema = new Schema({
+  userId: { type: String, required: true, unique: true, index: true },
+  theme: { type: String, enum: ['light', 'dark', 'system'], default: 'system' },
+  accentColor: { type: String, default: 'blue' },
+  notificationsEnabled: { type: Boolean, default: false },
+  notificationsDeniedAt: { type: Date, default: null },
+  aiProvider: { type: String, enum: ['gemini', 'groq'], default: 'gemini' },
+  sidebarCollapsed: { type: Boolean, default: false },
+  editorFontSize: { type: String, default: 'md' },
+}, { timestamps: true })
+
+// Sessions — tracks active login sessions per device
+const SessionSchema = new Schema({
+  userId: { type: String, required: true, index: true },
+  jwtJti: { type: String, required: true, unique: true },  // JWT ID for revocation
+  deviceId: { type: String, default: null },
+  deviceName: { type: String, default: null },
+  os: { type: String, default: null },
+  browserName: { type: String, default: null },
+  ipAddress: { type: String, default: null },
+  userAgent: { type: String, default: null },
+  lastActiveAt: { type: Date, default: Date.now },
+  expiresAt: { type: Date, required: true },
+  revokedAt: { type: Date, default: null },
+  isRevoked: { type: Boolean, default: false },
+}, { timestamps: true })
+
+// History — chronological log of note views, searches, exports, etc.
+const HistorySchema = new Schema({
+  userId: { type: String, required: true, index: true },
+  action: {
+    type: String,
+    enum: [
+      'note_viewed', 'note_created', 'note_edited', 'note_deleted',
+      'search_performed', 'note_exported', 'note_imported',
+      'ai_summarized', 'ai_titled', 'ai_chat_started',
+      'notebook_created', 'notebook_deleted',
+    ],
+    required: true,
+  },
+  targetId: { type: String, default: null },
+  targetTitle: { type: String, default: null },
+  targetType: { type: String, enum: ['note', 'notebook', 'search', 'ai'], default: 'note' },
+  meta: { type: Schema.Types.Mixed, default: {} },  // extra data e.g. search query, export format
+  occurredAt: { type: Date, default: Date.now, index: true },
+})
+
+export const AIConversation = models.AIConversation || model('AIConversation', AIConversationSchema)
+export const Settings = models.Settings || model('Settings', SettingsSchema)
+export const Session = models.Session || model('Session', SessionSchema)
+export const History = models.History || model('History', HistorySchema)
+
 export const User = models.User || model('User', UserSchema)
 export const Workspace = models.Workspace || model('Workspace', WorkspaceSchema)
 export const Notebook = models.Notebook || model('Notebook', NotebookSchema)

@@ -16,7 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   ArrowLeft, MoreHorizontal, Star, StarOff, Pin, PinOff,
   Archive, ArchiveRestore, Trash2, Copy, Clock, Sparkles,
-  Download, CheckCircle2, Loader2,
+  Download, CheckCircle2, Loader2, Zap, MessageSquare,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn, generateId, truncateTitle, wordCount } from '@/lib/utils'
@@ -341,17 +341,23 @@ function AIPanelTabs({
         <button
           onClick={() => setAiMode('actions')}
           className={cn(
-            'flex-1 text-xs font-medium py-2 px-2 rounded-xl transition-colors',
+            'flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-2 rounded-xl transition-colors',
             aiMode === 'actions' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent text-muted-foreground'
           )}
-        >⚡ Actions</button>
+        >
+          <Zap className="w-3.5 h-3.5" />
+          Actions
+        </button>
         <button
           onClick={() => setAiMode('chat')}
           className={cn(
-            'flex-1 text-xs font-medium py-2 px-2 rounded-xl transition-colors',
+            'flex-1 flex items-center justify-center gap-1.5 text-xs font-medium py-2 px-2 rounded-xl transition-colors',
             aiMode === 'chat' ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent text-muted-foreground'
           )}
-        >💬 Chat with Ava</button>
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          Chat with Ava
+        </button>
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden">

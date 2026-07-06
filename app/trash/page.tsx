@@ -38,35 +38,59 @@ export default function TrashPage() {
 
   return (
     <AppShell>
-      <div className="max-w-3xl mx-auto px-6 py-8">
-        <div className="flex items-center gap-2 mb-2">
-          <Trash2 className="w-5 h-5 text-destructive" />
-          <h1 className="text-xl font-semibold">Trash</h1>
-          <span className="text-sm text-muted-foreground">({notes.length})</span>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
+        {/* Header */}
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-9 h-9 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center justify-center shrink-0">
+            <Trash2 className="w-4 h-4 text-destructive" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold leading-none">Trash</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">{notes.length} {notes.length === 1 ? 'note' : 'notes'}</p>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground mb-6">Notes are permanently deleted after 30 days.</p>
+        <p className="text-xs text-muted-foreground mb-6 ml-0.5">Notes are permanently deleted after 30 days.</p>
 
         {notes.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-20 text-muted-foreground">
-            <Trash2 className="w-12 h-12 opacity-20" />
-            <p className="text-sm">Trash is empty</p>
+          <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
+            <div className="w-16 h-16 rounded-2xl bg-muted/60 border border-border/40 flex items-center justify-center">
+              <Trash2 className="w-7 h-7 opacity-30" />
+            </div>
+            <div className="text-center space-y-1">
+              <p className="font-medium text-foreground text-sm">Trash is empty</p>
+              <p className="text-xs">Deleted notes will appear here</p>
+            </div>
           </div>
         ) : (
           <div className="space-y-2">
             {notes.map(note => (
-              <div key={note.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
+              <div key={note.id} className="flex items-center gap-3 p-3.5 rounded-2xl border border-border/60 bg-card transition-colors hover:bg-muted/30">
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{note.title || 'Untitled'}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     Trashed {note.trashedAt ? timeAgo(note.trashedAt) : 'recently'}
                   </p>
                 </div>
-                <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => restore(note)}>
-                  <RotateCcw className="w-3.5 h-3.5" /> Restore
-                </Button>
-                <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-destructive hover:text-destructive" onClick={() => permDelete(note)}>
-                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                </Button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-xs h-9 px-3 rounded-xl touch-manipulation"
+                    onClick={() => restore(note)}
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Restore
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-xs h-9 px-3 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10 touch-manipulation"
+                    onClick={() => permDelete(note)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
