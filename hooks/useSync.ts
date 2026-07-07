@@ -191,13 +191,23 @@ export function useSync(userId: string | null) {
     const pushInterval = setInterval(pushToServer, 15_000)
 
     window.addEventListener('online', fullSync)
-    window.addEventListener('focus', pullFromServer) // sync when tab regains focus
+
+    // Throttle focus-triggered pull to once per 30s to avoid spamming
+    let lastFocusPull = 0
+    const onFocus = () => {
+      const now = Date.now()
+      if (now - lastFocusPull > 30_000) {
+        lastFocusPull = now
+        pullFromServer()
+      }
+    }
+    window.addEventListener('focus', onFocus)
 
     return () => {
       clearInterval(pullInterval)
       clearInterval(pushInterval)
       window.removeEventListener('online', fullSync)
-      window.removeEventListener('focus', pullFromServer)
+      window.removeEventListener('focus', onFocus)
     }
   }, [userId, fullSync, pullFromServer, pushToServer])
 

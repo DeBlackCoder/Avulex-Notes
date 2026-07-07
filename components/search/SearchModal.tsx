@@ -1,7 +1,7 @@
 'use client'
 import { useSearch, type NoteSearchResult, type NotebookSearchResult } from '@/hooks/useSearch'
 import { useRouter } from 'next/navigation'
-import { useRef, useEffect, useCallback, useId } from 'react'
+import { useRef, useEffect } from 'react'
 import { FileText, BookOpen, Search, X, Loader2, FileX, Clock } from 'lucide-react'
 import { timeAgo } from '@/lib/utils'
 
