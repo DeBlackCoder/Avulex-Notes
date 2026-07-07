@@ -1,11 +1,11 @@
 'use client'
 import { useSearch, type NoteSearchResult, type NotebookSearchResult } from '@/hooks/useSearch'
 import { useRouter } from 'next/navigation'
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useId } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { FileText, Notebook, Search, FileX } from 'lucide-react'
+import { FileText, Notebook, Search, FileX, Loader2 } from 'lucide-react'
 import { cn, timeAgo } from '@/lib/utils'
 
 interface Props {
@@ -13,14 +13,17 @@ interface Props {
   onClose: () => void
 }
 
+// Highlights every word of the query independently, so "meeting notes" still
+// highlights "meeting" and "notes" wherever they appear, not just as one phrase.
 function highlight(text: string, query: string) {
-  if (!query || query.length < 2) return <>{text}</>
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  const parts = text.split(new RegExp(`(${escaped})`, 'gi'))
+  const words = query.trim().split(/\s+/).filter(w => w.length >= 2)
+  if (words.length === 0) return <>{text}</>
+  const escaped = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const parts = text.split(new RegExp(`(${escaped.join('|')})`, 'gi'))
   return (
     <>
       {parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase()
+        words.some(w => w.toLowerCase() === part.toLowerCase())
           ? <mark key={i} className="bg-amber-100 dark:bg-amber-900/40 text-amber-900 dark:text-amber-200 rounded-sm px-px">{part}</mark>
           : part
       )}
@@ -33,6 +36,7 @@ export function SearchModal({ open, onClose }: Props) {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const listboxId = useId()
 
   const handleClose = () => {
     onClose()
@@ -52,6 +56,12 @@ export function SearchModal({ open, onClose }: Props) {
   const noteResults = results.filter((r): r is NoteSearchResult => r.type === 'note')
   const notebookResults = results.filter((r): r is NotebookSearchResult => r.type === 'notebook')
   const hasResults = results.length > 0
+
+  // Reset scroll position + focus back on the input whenever the query changes,
+  // so stale keyboard focus doesn't linger on a row that's scrolled out of view.
+  useEffect(() => {
+    if (resultsRef.current) resultsRef.current.scrollTop = 0
+  }, [query])
 
   // Arrow-key navigation between rows
   const handleInputKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -77,11 +87,18 @@ export function SearchModal({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose() }}>
-      <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-2xl border border-border/60">
+      <DialogContent
+        className="sm:max-w-lg p-0 gap-0 overflow-hidden rounded-2xl border border-border/60"
+        aria-label="Search notes and notebooks"
+      >
 
         {/* ── Search input ── */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border">
-          <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+          {isSearching ? (
+            <Loader2 className="w-4 h-4 text-muted-foreground shrink-0 animate-spin" />
+          ) : (
+            <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+          )}
           <Input
             ref={inputRef}
             placeholder="Search notes, content, notebooks…"
@@ -90,6 +107,10 @@ export function SearchModal({ open, onClose }: Props) {
             onKeyDown={handleInputKeyDown}
             className="border-0 shadow-none focus-visible:ring-0 p-0 text-[15px] bg-transparent"
             autoFocus
+            role="combobox"
+            aria-expanded={hasResults}
+            aria-controls={listboxId}
+            aria-autocomplete="list"
           />
           {query && (
             <button
@@ -106,7 +127,13 @@ export function SearchModal({ open, onClose }: Props) {
 
         {/* ── Results ── */}
         <ScrollArea>
-          <div ref={resultsRef} className="max-h-[min(420px,65vh)]">
+          <div
+            ref={resultsRef}
+            id={listboxId}
+            role="listbox"
+            aria-label="Search results"
+            className="max-h-[min(420px,65vh)]"
+          >
 
             {/* Empty / hint */}
             {query.length < 2 && (
@@ -126,13 +153,15 @@ export function SearchModal({ open, onClose }: Props) {
             {/* Notebook results */}
             {notebookResults.length > 0 && (
               <section>
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider px-4 pt-3 pb-1.5">
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider px-4 pt-3 pb-1.5 sticky top-0 bg-popover/95 backdrop-blur-sm">
                   Notebooks
                 </p>
                 {notebookResults.map(r => (
                   <button
                     key={r.notebook.id}
                     data-result-row
+                    role="option"
+                    aria-selected="false"
                     onKeyDown={handleRowKeyDown}
                     onClick={() => handleNotebookSelect(r.notebook.id)}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none transition-colors border-b border-border/40 last:border-0"
@@ -162,7 +191,7 @@ export function SearchModal({ open, onClose }: Props) {
             {noteResults.length > 0 && (
               <section>
                 {notebookResults.length > 0 && (
-                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider px-4 pt-3 pb-1.5">
+                  <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider px-4 pt-3 pb-1.5 sticky top-0 bg-popover/95 backdrop-blur-sm">
                     Notes
                   </p>
                 )}
@@ -170,6 +199,8 @@ export function SearchModal({ open, onClose }: Props) {
                   <button
                     key={r.note.id}
                     data-result-row
+                    role="option"
+                    aria-selected="false"
                     onKeyDown={handleRowKeyDown}
                     onClick={() => handleNoteSelect(r.note.id)}
                     className="w-full flex flex-col gap-1 px-4 py-3 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none transition-colors border-b border-border/40 last:border-0"

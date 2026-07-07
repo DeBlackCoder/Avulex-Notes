@@ -86,7 +86,7 @@ export function Sidebar({ workspaceId, onSelectNotebook, selectedNotebook, onClo
 
   return (
     <>
-      <aside className="w-72 md:w-64 flex flex-col h-full bg-sidebar border-r border-border shadow-2xl md:shadow-none">
+      <aside className="w-72 md:w-64 flex flex-col h-full bg-sidebar border-r border-border shadow-2xl md:shadow-none overflow-hidden">
 
         {/* Brand header */}
         <div className="flex items-center gap-3 px-4 py-4 border-b border-border shrink-0">
@@ -102,7 +102,7 @@ export function Sidebar({ workspaceId, onSelectNotebook, selectedNotebook, onClo
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           <div className="py-3 px-2">
 
             {/* Navigation items */}

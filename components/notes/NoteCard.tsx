@@ -30,13 +30,46 @@ interface Props {
   onClick?: () => void
 }
 
+/**
+ * Extract clean readable text from Tiptap JSON content.
+ * Properly walks the node tree to get only text content in reading order.
+ */
+function extractTiptapText(content: string): string {
+  if (!content) return ''
+  try {
+    const doc = JSON.parse(content)
+    const parts: string[] = []
+
+    function walk(node: { type?: string; text?: string; content?: unknown[] }) {
+      if (node.type === 'text' && node.text) {
+        parts.push(node.text)
+      }
+      if (Array.isArray(node.content)) {
+        for (const child of node.content) {
+          walk(child as { type?: string; text?: string; content?: unknown[] })
+        }
+        // Add spacing after block-level nodes
+        const blockTypes = ['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'taskItem', 'blockquote', 'codeBlock']
+        if (node.type && blockTypes.includes(node.type)) {
+          parts.push(' ')
+        }
+      }
+    }
+
+    walk(doc)
+    return parts.join('').replace(/\s+/g, ' ').trim()
+  } catch {
+    // Fallback: strip JSON structure manually
+    return content
+      .replace(/"text":"([^"\\]*(\\.[^"\\]*)*)"/g, (_, t) => t + ' ')
+      .replace(/[{}\[\]",:\\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+}
+
 function getPlainPreview(content: string): string {
-  return content
-    .replace(/"text":"([^"]+)"/g, '$1')
-    .replace(/[{}[\]",]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 180)
+  return extractTiptapText(content).slice(0, 200)
 }
 
 // Generate a deterministic accent color from the note id/title

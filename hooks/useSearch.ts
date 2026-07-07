@@ -18,19 +18,34 @@ export interface NotebookSearchResult {
 
 export type SearchResult = NoteSearchResult | NotebookSearchResult
 
-// Extract readable text from Tiptap JSON string
+// Extract readable text from Tiptap JSON by walking the node tree
 function extractText(content: string): string {
   if (!content) return ''
   try {
-    // Strip Tiptap JSON structure, keep only text values
-    return content
-      .replace(/"text":"([^"\\]*(\\.[^"\\]*)*)"/g, (_, t) => t + ' ')
-      .replace(/\\n/g, ' ')
-      .replace(/[{}\[\],"]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
+    const doc = JSON.parse(content)
+    const parts: string[] = []
+
+    function walk(node: { type?: string; text?: string; content?: unknown[] }) {
+      if (node.type === 'text' && node.text) {
+        parts.push(node.text)
+      }
+      if (Array.isArray(node.content)) {
+        for (const child of node.content) {
+          walk(child as { type?: string; text?: string; content?: unknown[] })
+        }
+        const blockTypes = ['paragraph', 'heading', 'bulletList', 'orderedList', 'listItem', 'taskItem', 'blockquote', 'codeBlock']
+        if (node.type && blockTypes.includes(node.type)) parts.push(' ')
+      }
+    }
+
+    walk(doc)
+    return parts.join('').replace(/\s+/g, ' ').trim()
   } catch {
     return content
+      .replace(/"text":"([^"\\]*(\\.[^"\\]*)*)"/g, (_, t) => t + ' ')
+      .replace(/[{}\[\]",:\\]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
   }
 }
 
