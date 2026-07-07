@@ -20,6 +20,7 @@ import {
   Clock, Monitor, MessageSquare,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 interface SidebarProps {
   workspaceId: string
@@ -200,7 +201,12 @@ export function Sidebar({ workspaceId, onSelectNotebook, selectedNotebook, onClo
         </ScrollArea>
 
         {/* User footer */}
-        <div className="border-t border-border p-3 shrink-0">
+        <div className="border-t border-border p-3 shrink-0 space-y-2">
+          {/* Theme toggle — visible in sidebar (mobile gets it here, desktop has it in header) */}
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-muted-foreground font-medium">Appearance</span>
+            <ThemeToggle variant="segmented" />
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger className="w-full flex items-center gap-3 rounded-2xl p-2.5 hover:bg-accent active:bg-accent/80 transition-all duration-150 text-left active:scale-[0.98] touch-manipulation">
               <Avatar className="w-9 h-9 shrink-0">

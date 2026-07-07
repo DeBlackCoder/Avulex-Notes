@@ -13,6 +13,7 @@ import { useCreateNote } from '@/hooks/useNotes'
 import { useNotebooks } from '@/hooks/useNotebooks'
 import { toast } from 'sonner'
 import dynamic from 'next/dynamic'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 const AvaChat = dynamic(() => import('@/components/ai/AvaChat').then(m => m.AvaChat), { ssr: false })
 
@@ -143,6 +144,9 @@ export function AppShell({ children, workspaceId = '' }: Props) {
 
           {/* Sync status — desktop only */}
           <SyncStatusBadge status={status} lastSync={lastSync} className="hidden lg:flex" />
+
+          {/* Theme toggle — desktop only */}
+          <ThemeToggle className="hidden md:flex" />
 
           {/* Ask AI — desktop */}
           <button
