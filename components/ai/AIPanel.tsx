@@ -14,6 +14,7 @@ interface AIPanelProps {
   noteTitle?: string
   onApply: (text: string, mode?: 'replace' | 'insert' | 'title') => void
   onClose: () => void
+  onResultChange?: (hasResult: boolean) => void
 }
 
 const ACTIONS = [
@@ -38,7 +39,7 @@ function getApplyMode(action: string): 'replace' | 'insert' | 'title' {
   return 'insert'
 }
 
-export function AIPanel({ content, selection, noteTitle, onApply, onClose }: AIPanelProps) {
+export function AIPanel({ content, selection, noteTitle, onApply, onClose, onResultChange }: AIPanelProps) {
   const [loading, setLoading] = useState<string | null>(null)
   const [result, setResult] = useState<string | null>(null)
   const [tags, setTags] = useState<string[] | null>(null)
@@ -70,6 +71,7 @@ export function AIPanel({ content, selection, noteTitle, onApply, onClose }: AIP
       if (!res.ok) throw new Error(data.error || 'AI request failed')
       if (id === 'generate-tags') setTags(Array.isArray(data.result) ? data.result : [])
       else setResult(data.result)
+      onResultChange?.(true)
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'AI failed. Try again.')
       setResultAction(null)
@@ -85,11 +87,14 @@ export function AIPanel({ content, selection, noteTitle, onApply, onClose }: AIP
   const accept = () => {
     if (!result || !resultAction) return
     onApply(result, getApplyMode(resultAction))
-    // Close panel and return focus to note editor
+    onResultChange?.(false)
     onClose()
   }
 
-  const dismiss = () => { setResult(null); setTags(null); setResultAction(null) }
+  const dismiss = () => {
+    setResult(null); setTags(null); setResultAction(null)
+    onResultChange?.(false)
+  }
 
   const hasResult = !!(result || tags)
   const canApply = !!result && resultAction !== 'generate-tags'

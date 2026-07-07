@@ -278,10 +278,16 @@ export function NoteEditorClient({ noteId, user }: Props) {
                 onClose={() => setAiPanelOpen(false)}
               />
             </div>
-
-            {/* Mobile bottom sheet */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background rounded-t-3xl border-t border-border shadow-2xl"
-              style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+            <div
+              className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background border-t border-border shadow-2xl transition-all duration-300"
+              style={{
+                height: 'var(--ai-sheet-height, 85dvh)',
+                borderRadius: 'var(--ai-sheet-radius, 24px 24px 0 0)',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+              id="ai-mobile-sheet"
+            >
               <div className="w-10 h-1 bg-muted rounded-full mx-auto mt-3 mb-0 shrink-0" />
               <AIPanelTabs
                 plainText={plainText}
@@ -290,6 +296,15 @@ export function NoteEditorClient({ noteId, user }: Props) {
                 setAiMode={setAiMode}
                 onApply={handleAIApply}
                 onClose={() => setAiPanelOpen(false)}
+                onResultChange={(hasResult) => {
+                  const sheet = document.getElementById('ai-mobile-sheet')
+                  if (sheet) {
+                    sheet.style.setProperty('--ai-sheet-height', hasResult ? '100dvh' : '85dvh')
+                    sheet.style.setProperty('--ai-sheet-radius', hasResult ? '0' : '24px 24px 0 0')
+                    sheet.style.height = hasResult ? '100dvh' : '85dvh'
+                    sheet.style.borderRadius = hasResult ? '0' : '24px 24px 0 0'
+                  }
+                }}
               />
             </div>
           </>
@@ -325,7 +340,7 @@ export function NoteEditorClient({ noteId, user }: Props) {
 }
 
 function AIPanelTabs({
-  plainText, title, aiMode, setAiMode, onApply, onClose,
+  plainText, title, aiMode, setAiMode, onApply, onClose, onResultChange,
 }: {
   plainText: string
   title: string
@@ -333,6 +348,7 @@ function AIPanelTabs({
   setAiMode: (m: 'actions' | 'chat') => void
   onApply: (text: string, mode?: 'replace' | 'insert' | 'title') => void
   onClose: () => void
+  onResultChange?: (hasResult: boolean) => void
 }) {
   return (
     <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
@@ -359,7 +375,7 @@ function AIPanelTabs({
 
       <div className="flex-1 min-h-0 overflow-hidden">
         {aiMode === 'actions'
-          ? <AIPanel content={plainText} noteTitle={title} onApply={onApply} onClose={onClose} />
+          ? <AIPanel content={plainText} noteTitle={title} onApply={onApply} onClose={onClose} onResultChange={onResultChange} />
           : <AvaChat
               noteContext={plainText}
               noteTitle={title}
