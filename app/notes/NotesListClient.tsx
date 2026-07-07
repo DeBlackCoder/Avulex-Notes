@@ -1,12 +1,14 @@
 'use client'
+import { useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { NoteCard } from '@/components/notes/NoteCard'
-import { useNotes, useCreateNote } from '@/hooks/useNotes'
+import { useNotes, useCreateNote, useUpdateNote } from '@/hooks/useNotes'
 import { useNotebooks } from '@/hooks/useNotebooks'
 import { Button } from '@/components/ui/button'
-import { Plus, BookOpen } from 'lucide-react'
+import { Plus, BookOpen, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
+import { CreateNoteModal } from '@/components/ai/CreateNoteModal'
 
 export function NotesListClient() {
   const router = useRouter()
@@ -15,6 +17,8 @@ export function NotesListClient() {
   const { data: notes = [], isLoading } = useNotes(notebookId)
   const { data: notebooks = [] } = useNotebooks()
   const createNote = useCreateNote()
+  const updateNote = useUpdateNote()
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   const currentNotebook = notebooks.find(nb => nb.id === notebookId)
 
@@ -22,6 +26,16 @@ export function NotesListClient() {
     const nbId = notebookId || notebooks[0]?.id
     if (!nbId) { toast.error('Create a notebook first'); return }
     const note = await createNote.mutateAsync({ notebookId: nbId, title: 'Untitled' })
+    router.push(`/notes/${note.id}`)
+  }
+
+  const handleAICreate = async (title: string, content: string) => {
+    const nbId = notebookId || notebooks[0]?.id
+    if (!nbId) { toast.error('Create a notebook first'); return }
+    const note = await createNote.mutateAsync({ notebookId: nbId, title })
+    // Save the generated content immediately
+    await updateNote.mutateAsync({ id: note.id, changes: { title, content, synced: false, updatedAt: Date.now() } })
+    toast.success('Note created by AI')
     router.push(`/notes/${note.id}`)
   }
 
@@ -42,13 +56,18 @@ export function NotesListClient() {
               <p className="text-xs text-muted-foreground">{notes.length} {notes.length === 1 ? 'note' : 'notes'}</p>
             </div>
           </div>
-          {/* Desktop new button — mobile uses FAB */}
-          <Button onClick={handleNew} size="sm" className="gap-2 rounded-xl shrink-0 hidden sm:flex">
-            <Plus className="w-4 h-4" /> New Note
-          </Button>
+          {/* Desktop buttons */}
+          <div className="hidden sm:flex items-center gap-2 shrink-0">
+            <Button onClick={() => setCreateModalOpen(true)} size="sm" variant="outline" className="gap-2 rounded-xl border-primary/30 text-primary hover:bg-primary/5">
+              <Sparkles className="w-4 h-4" /> AI Create
+            </Button>
+            <Button onClick={handleNew} size="sm" className="gap-2 rounded-xl">
+              <Plus className="w-4 h-4" /> New Note
+            </Button>
+          </div>
         </div>
 
-        {/* Loading skeleton */}
+        {/* Loading */}
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[...Array(6)].map((_, i) => (
@@ -57,7 +76,7 @@ export function NotesListClient() {
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Empty */}
         {!isLoading && notes.length === 0 && (
           <div className="flex flex-col items-center gap-4 py-20 text-muted-foreground">
             <div className="w-20 h-20 rounded-3xl bg-muted/60 flex items-center justify-center">
@@ -65,11 +84,16 @@ export function NotesListClient() {
             </div>
             <div className="text-center space-y-1">
               <p className="font-medium text-foreground">No notes yet</p>
-              <p className="text-sm">Create your first note to get started</p>
+              <p className="text-sm">Create manually or let AI write one for you</p>
             </div>
-            <Button onClick={handleNew} variant="outline" size="sm" className="rounded-xl gap-2">
-              <Plus className="w-4 h-4" /> Create note
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleNew} variant="outline" size="sm" className="rounded-xl gap-2">
+                <Plus className="w-4 h-4" /> Create note
+              </Button>
+              <Button onClick={() => setCreateModalOpen(true)} size="sm" className="rounded-xl gap-2">
+                <Sparkles className="w-4 h-4" /> AI Create
+              </Button>
+            </div>
           </div>
         )}
 
@@ -81,14 +105,30 @@ export function NotesListClient() {
         )}
       </div>
 
-      {/* Mobile FAB */}
-      <button
-        onClick={handleNew}
-        className="fixed bottom-[calc(env(safe-area-inset-bottom)+5rem)] right-4 z-10 sm:hidden w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 flex items-center justify-center transition-all duration-150 active:scale-[0.93] touch-manipulation hover:bg-primary/90"
-        aria-label="New note"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
+      {/* Mobile FABs — stacked: AI Create above New Note */}
+      <div className="fixed sm:hidden z-10 flex flex-col gap-3 items-end"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 5.5rem)', right: '1rem' }}>
+        <button
+          onClick={() => setCreateModalOpen(true)}
+          className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/30 flex items-center justify-center transition-all active:scale-[0.93] touch-manipulation"
+          aria-label="AI Create note"
+        >
+          <Sparkles className="w-5 h-5" />
+        </button>
+        <button
+          onClick={handleNew}
+          className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 flex items-center justify-center transition-all active:scale-[0.93] touch-manipulation"
+          aria-label="New note"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      </div>
+
+      <CreateNoteModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreate={handleAICreate}
+      />
     </AppShell>
   )
 }

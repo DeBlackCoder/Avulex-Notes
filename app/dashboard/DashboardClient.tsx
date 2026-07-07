@@ -4,12 +4,13 @@ import { useRouter } from 'next/navigation'
 import { getDB, type LocalNote } from '@/lib/db'
 import { AppShell } from '@/components/layout/AppShell'
 import { NoteCard } from '@/components/notes/NoteCard'
-import { Plus, Pin, Star, Clock, BookOpen, FileText } from 'lucide-react'
+import { Plus, Pin, Star, Clock, BookOpen, FileText, Sparkles } from 'lucide-react'
 import type { SessionPayload } from '@/lib/session'
-import { useCreateNote } from '@/hooks/useNotes'
+import { useCreateNote, useUpdateNote } from '@/hooks/useNotes'
 import { useNotebooks } from '@/hooks/useNotebooks'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { CreateNoteModal } from '@/components/ai/CreateNoteModal'
 
 interface Props { user: SessionPayload }
 
@@ -38,8 +39,10 @@ export function DashboardClient({ user }: Props) {
   const [pinned, setPinned] = useState<LocalNote[]>([])
   const [favorites, setFavorites] = useState<LocalNote[]>([])
   const [activeTab, setActiveTab] = useState<TabKey>('recent')
+  const [createModalOpen, setCreateModalOpen] = useState(false)
   const { data: notebooks = [] } = useNotebooks()
   const createNote = useCreateNote()
+  const updateNote = useUpdateNote()
   const [greeting, setGreeting] = useState('morning')
   const [today, setToday] = useState('')
 
@@ -61,6 +64,15 @@ export function DashboardClient({ user }: Props) {
     const defaultNb = notebooks[0]
     if (!defaultNb) { toast.error('Create a notebook first'); return }
     const note = await createNote.mutateAsync({ notebookId: defaultNb.id, title: 'Untitled' })
+    router.push(`/notes/${note.id}`)
+  }
+
+  const handleAICreate = async (title: string, content: string) => {
+    const nb = notebooks[0]
+    if (!nb) { toast.error('Create a notebook first'); return }
+    const note = await createNote.mutateAsync({ notebookId: nb.id, title })
+    await updateNote.mutateAsync({ id: note.id, changes: { title, content, synced: false, updatedAt: Date.now() } })
+    toast.success('AI note created')
     router.push(`/notes/${note.id}`)
   }
 
@@ -98,10 +110,19 @@ export function DashboardClient({ user }: Props) {
             </h2>
           </div>
           {/* Quick stats summary chip */}
-          <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-muted/50 border border-border/40 shrink-0 mt-1">
-            <FileText className="w-3.5 h-3.5 text-violet-500" />
-            <span className="text-xs font-semibold">{totalNotes}</span>
-            <span className="text-xs text-muted-foreground">notes</span>
+          <div className="flex flex-col items-end gap-2 shrink-0 mt-1">
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-muted/50 border border-border/40">
+              <FileText className="w-3.5 h-3.5 text-violet-500" />
+              <span className="text-xs font-semibold">{totalNotes}</span>
+              <span className="text-xs text-muted-foreground">notes</span>
+            </div>
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gradient-to-r from-violet-500/10 to-primary/10 border border-violet-200/40 dark:border-violet-800/30 text-primary text-xs font-semibold hover:from-violet-500/20 hover:to-primary/20 transition-all touch-manipulation active:scale-[0.96]"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              AI Create
+            </button>
           </div>
         </div>
 
@@ -170,6 +191,12 @@ export function DashboardClient({ user }: Props) {
       >
         <Plus className="w-6 h-6" />
       </button>
+
+      <CreateNoteModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreate={handleAICreate}
+      />
     </AppShell>
   )
 }
