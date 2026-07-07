@@ -210,15 +210,15 @@ export function DashboardClient({ user }: Props) {
         </div>
 
         {/* Notes grid */}
-        <div role="tabpanel" id={`panel-${activeTab}`}>
+        <div role="tabpanel" id={`panel-${activeTab}`} suppressHydrationWarning>
           {isLoading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => <NoteCardSkeleton key={i} />)}
             </div>
           ) : tabNotes[activeTab].length === 0 ? (
             <EmptyState label={tabEmpty[activeTab]} icon={tabIcons[activeTab]} />
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {tabNotes[activeTab].map(n => <NoteCard key={n.id} note={n} />)}
             </div>
           )}
