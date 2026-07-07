@@ -42,6 +42,9 @@ interface Props {
   fullPage?: boolean
   onEditNote?: (text: string, mode: 'replace' | 'insert' | 'append') => void
   onRenameNote?: (title: string) => void
+  /** Pre-load a saved conversation */
+  initialMessages?: Message[]
+  initialConvId?: string
 }
 
 const SUGGESTIONS = [
@@ -63,8 +66,8 @@ function detectNoteEditMode(text: string): 'replace' | 'insert' | 'append' | nul
 let _c = 0
 const gid = () => `m${++_c}`
 
-export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote, onRenameNote }: Props) {
-  const [messages, setMessages] = useState<Message[]>([])
+export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote, onRenameNote, initialMessages, initialConvId }: Props) {
+  const [messages, setMessages] = useState<Message[]>(initialMessages ?? [])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [copiedId, setCopied] = useState<string | null>(null)
@@ -75,8 +78,8 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<AbortController | null>(null)
-  // Conversation persistence
-  const convIdRef = useRef<string | null>(null)
+  // Conversation persistence — restore existing ID if continuing a saved chat
+  const convIdRef = useRef<string | null>(initialConvId ?? null)
 
   useEffect(() => {
     if (atBottom) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
