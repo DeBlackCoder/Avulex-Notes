@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import ReactMarkdown from 'react-markdown'
+import { generateId } from '@/lib/utils'
 
 // Typing indicator — three bouncing dots inside a message bubble
 function TypingIndicator() {
@@ -74,6 +75,8 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<AbortController | null>(null)
+  // Conversation persistence
+  const convIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (atBottom) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -86,6 +89,54 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
     if (!el) return
     setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 60)
   }
+
+  // ── Persistence helpers ──────────────────────────────────────────────────
+
+  /** Create a new conversation in MongoDB and store its ID */
+  const ensureConversation = useCallback(async (firstUserText: string): Promise<string> => {
+    if (convIdRef.current) return convIdRef.current
+    try {
+      const res = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: firstUserText.slice(0, 60) || 'New conversation',
+          noteContext: noteContext ? noteTitle || 'Note' : null,
+          messages: [],
+        }),
+      })
+      const data = await res.json()
+      const id: string = data.conversation?._id ?? generateId()
+      convIdRef.current = id
+      return id
+    } catch {
+      // Non-fatal — chat still works without persistence
+      const id = generateId()
+      convIdRef.current = id
+      return id
+    }
+  }, [noteContext, noteTitle])
+
+  /** Append a pair of messages (user + assistant) to the stored conversation */
+  const persistMessages = useCallback(async (
+    convId: string,
+    userMsg: Message,
+    assistantMsg: Message
+  ) => {
+    try {
+      // Also update title with first user message if this is the first exchange
+      await fetch(`/api/conversations/${convId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: userMsg.role, content: userMsg.content, timestamp: new Date(userMsg.timestamp) },
+            { role: assistantMsg.role, content: assistantMsg.content, timestamp: new Date(assistantMsg.timestamp) },
+          ],
+        }),
+      })
+    } catch { /* silently ignore — chat still works */ }
+  }, [])
 
   const send = useCallback(async (text: string) => {
     if (!text.trim() || streaming) return
@@ -107,6 +158,9 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
     setStreaming(true)
     setAtBottom(true)
     abortRef.current = new AbortController()
+
+    // Ensure conversation exists in DB
+    const convId = await ensureConversation(text.trim())
 
     // Build system with note-edit instruction if applicable
     const systemExtra = noteMode
@@ -147,6 +201,10 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
         : m
       ))
 
+      // Persist completed exchange to MongoDB
+      const finalAsstMsg: Message = { ...asstMsg, content: acc, streaming: false }
+      await persistMessages(convId, userMsg, finalAsstMsg)
+
       // Auto-apply if note edit intent detected
       if (noteMode && onEditNote && acc.trim()) {
         onEditNote(acc.trim(), noteMode)
@@ -160,7 +218,7 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
       setStreaming(false)
       abortRef.current = null
     }
-  }, [messages, streaming, noteContext, onEditNote])
+  }, [messages, streaming, noteContext, onEditNote, ensureConversation, persistMessages])
 
   const stop = () => abortRef.current?.abort()
 
@@ -268,7 +326,7 @@ export function AvaChat({ onClose, noteContext, noteTitle, fullPage, onEditNote,
           )}
           {hasMessages && (
             <button
-              onClick={() => { if (streaming) stop(); setMessages([]); setSummary(null) }}
+              onClick={() => { if (streaming) stop(); setMessages([]); setSummary(null); convIdRef.current = null }}
               title="Clear chat"
               className="min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center hover:bg-accent active:bg-accent/80 text-muted-foreground hover:text-foreground transition-all duration-150 touch-manipulation active:scale-[0.95]"
             >
