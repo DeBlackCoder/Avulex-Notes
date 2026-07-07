@@ -175,8 +175,8 @@ export function DashboardClient({ user }: Props) {
           ))}
         </div>
 
-        {/* Tab pills */}
-        <div role="tablist" aria-label="Note filters" className="flex gap-2 overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 pb-1">
+        {/* Tab pills — all visible at once, no scroll */}
+        <div role="tablist" aria-label="Note filters" className="flex gap-2">
           {TABS.map(({ key, label, icon: Icon }) => {
             const active = activeTab === key
             const count = tabNotes[key].length
@@ -188,17 +188,17 @@ export function DashboardClient({ user }: Props) {
                 aria-controls={`panel-${key}`}
                 onClick={() => setActiveTab(key)}
                 className={cn(
-                  'flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-sm font-medium whitespace-nowrap shrink-0 transition-all duration-200 touch-manipulation active:scale-[0.95]',
+                  'flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl text-sm font-medium transition-all duration-200 touch-manipulation active:scale-[0.95]',
                   active
                     ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
                     : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/40'
                 )}
               >
-                <Icon className="w-3.5 h-3.5" />
-                {label}
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{label}</span>
                 {!isLoading && count > 0 && (
                   <span className={cn(
-                    'text-[10px] px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center',
+                    'text-[10px] px-1.5 py-0.5 rounded-full font-bold min-w-[18px] text-center shrink-0',
                     active ? 'bg-white/20' : 'bg-muted-foreground/15'
                   )}>
                     {count}
@@ -210,15 +210,15 @@ export function DashboardClient({ user }: Props) {
         </div>
 
         {/* Notes grid */}
-        <div role="tabpanel" id={`panel-${activeTab}`} suppressHydrationWarning>
+        <div role="tabpanel" id={`panel-${activeTab}`}>
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {Array.from({ length: 8 }).map((_, i) => <NoteCardSkeleton key={i} />)}
             </div>
           ) : tabNotes[activeTab].length === 0 ? (
             <EmptyState label={tabEmpty[activeTab]} icon={tabIcons[activeTab]} />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {tabNotes[activeTab].map(n => <NoteCard key={n.id} note={n} />)}
             </div>
           )}
